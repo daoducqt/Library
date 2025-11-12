@@ -2,46 +2,41 @@
 import React, { useEffect, useRef, useState } from "react";
 
 type SliderProps = {
+  images: string[];
   autoplay?: boolean;
   interval?: number;
   className?: string;
 };
 
 export default function Slider({
+  images,
   autoplay = true,
   interval = 4000,
   className = "",
 }: SliderProps) {
   const [index, setIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoplay);
-  const [images, setImages] = useState<string[]>([]);
+  const [leftText, setLeftText] = useState("");
+  const [rightText, setRightText] = useState("");
+  const [leftIdx, setLeftIdx] = useState(0);
+  const [rightIdx, setRightIdx] = useState(0);
   const timeoutRef = useRef<number | null>(null);
-  const startX = useRef<number | null>(null);
+  const dragStartX = useRef<number | null>(null);
+  const dragActive = useRef<boolean>(false);
   const length = images.length;
 
-  const getAllFantasy = async () => {
-    const all = [];
-    const totalPages = 4;
-    for (let page = 1; page <= totalPages; page++) {
-      const res = await fetch(
-        `https://openlibrary.org/subjects/fantasy.json?limit=100&offset=${
-          (page - 1) * 100
-        }`
-      );
-      const data = await res.json();
-      all.push(...data.works);
-    }
-    const covers = all
-      .filter((b) => b.cover_id)
-      .slice(0, 10)
-      .map((b) => `https://covers.openlibrary.org/b/id/${b.cover_id}-L.jpg`);
-    setImages(covers);
-  };
+  const leftQuotes = [
+    "“A room without books is like a body without a soul. Books breathe life into our imagination.”",
+    "“Each page turned is a step into another world, a journey beyond time.”",
+    "“Books whisper wisdom that only open minds can hear.”",
+  ];
+  const rightQuotes = [
+    "“Read. Reflect. Rise. Let every page awaken your spirit.”",
+    "“Words are seeds of knowledge — plant them and let them grow.”",
+    "“Turn the page, and turn your life into something extraordinary.”",
+  ];
 
-  useEffect(() => {
-    getAllFantasy();
-  }, []);
-
+  // === Auto xoay ảnh ===
   useEffect(() => {
     if (!isPlaying || length === 0) return;
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -53,129 +48,137 @@ export default function Slider({
     };
   }, [index, isPlaying, interval, length]);
 
-  const prev = () => setIndex((i) => (i - 1 + length) % length);
-  const next = () => setIndex((i) => (i + 1) % length);
-  const goTo = (i: number) => setIndex(((i % length) + length) % length);
+  // === Hiệu ứng typing ===
+  useEffect(() => {
+    let charIndex = 0;
+    setLeftText("");
+    const text = leftQuotes[leftIdx];
+    const intervalId = setInterval(() => {
+      setLeftText((prev) => prev + text[charIndex]);
+      charIndex++;
+      if (charIndex === text.length) clearInterval(intervalId);
+    }, 40);
+    return () => clearInterval(intervalId);
+  }, [leftIdx]);
 
-  const onMouseEnter = () => setIsPlaying(false);
-  const onMouseLeave = () => setIsPlaying(autoplay);
+  useEffect(() => {
+    let charIndex = 0;
+    setRightText("");
+    const text = rightQuotes[rightIdx];
+    const intervalId = setInterval(() => {
+      setRightText((prev) => prev + text[charIndex]);
+      charIndex++;
+      if (charIndex === text.length) clearInterval(intervalId);
+    }, 40);
+    return () => clearInterval(intervalId);
+  }, [rightIdx]);
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX;
+  // === Tự động đổi slogan ===
+  useEffect(() => {
+    const leftTimer = setInterval(
+      () => setLeftIdx((i) => (i + 1) % leftQuotes.length),
+      6000
+    );
+    const rightTimer = setInterval(
+      () => setRightIdx((i) => (i + 1) % rightQuotes.length),
+      7000
+    );
+    return () => {
+      clearInterval(leftTimer);
+      clearInterval(rightTimer);
+    };
+  }, []);
+
+  // === Kéo ===
+  const handleDragStart = (clientX: number) => {
+    dragStartX.current = clientX;
+    dragActive.current = true;
+    setIsPlaying(false);
   };
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (startX.current == null) return;
-    const diff = startX.current - e.touches[0].clientX;
+
+  const handleDragMove = (clientX: number) => {
+    if (!dragActive.current || dragStartX.current == null) return;
+    const diff = dragStartX.current - clientX;
     if (Math.abs(diff) > 50) {
-      diff > 0 ? next() : prev();
-      startX.current = null;
+      if (diff > 0) setIndex((i) => (i + 1) % length);
+      else setIndex((i) => (i - 1 + length) % length);
+      dragActive.current = false;
+      dragStartX.current = null;
     }
   };
 
-  const idx = (i: number) => ((i % length) + length) % length;
-  const prevIndex = length ? idx(index - 1) : 0;
-  const nextIndex = length ? idx(index + 1) : 0;
+  const handleDragEnd = () => {
+    dragActive.current = false;
+    dragStartX.current = null;
+    setTimeout(() => setIsPlaying(true), 1500);
+  };
+
+  if (length === 0)
+    return <div className="text-center text-gray-300 py-10">Loading...</div>;
 
   return (
     <div
-      className={`w-full max-w-5xl mx-auto ${className}`}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      className={`relative w-full mx-auto py-20 overflow-hidden select-none ${className}`}
+      style={{
+        backgroundImage: "url('/fanatasy.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
     >
-      <div className="relative h-[500px] flex items-center justify-center overflow-visible bg-gradient-to-b from-gray-900 via-black/80 to-gray-900">
-        <div
-          className="relative w-full max-w-4xl mx-auto pointer-events-none"
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-        >
-          {/* Left preview */}
-          {length > 0 && (
-            <img
-              src={images[prevIndex]}
-              alt={`prev-${prevIndex}`}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 w-[220px] h-[330px] rounded-xl shadow-lg object-contain opacity-40 scale-90 blur-sm bg-black transition-all duration-600"
-              draggable={false}
-            />
-          )}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/40" />
 
-          {/* Center active */}
-          {length > 0 && (
-            <div className="relative mx-auto w-[335px] h-[500px] rounded-2xl overflow-hidden shadow-2xl transform transition-all duration-700 pointer-events-auto bg-black">
+      <div
+        className="relative w-full h-[480px] flex items-center justify-center cursor-grab active:cursor-grabbing"
+        style={{ perspective: "1600px" }}
+        onMouseDown={(e) => handleDragStart(e.clientX)}
+        onMouseMove={(e) => handleDragMove(e.clientX)}
+        onMouseUp={handleDragEnd}
+        onMouseLeave={handleDragEnd}
+        onTouchStart={(e) => handleDragStart(e.touches[0].clientX)}
+        onTouchMove={(e) => handleDragMove(e.touches[0].clientX)}
+        onTouchEnd={handleDragEnd}
+      >
+        <div
+          className="absolute inset-0 flex items-center justify-center transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]"
+          style={{
+            transformStyle: "preserve-3d",
+            transform: `translateZ(-400px) rotateY(${index * -45}deg)`,
+          }}
+        >
+          {images.map((img, i) => (
+            <div
+              key={i}
+              className="absolute w-[200px] h-[310px] rounded-xl overflow-hidden shadow-2xl transition-all duration-700"
+              style={{
+                transform: `rotateY(${i * 45}deg) translateZ(480px)`,
+                opacity: i === index ? 1 : 0.55,
+                filter:
+                  i === index
+                    ? "none"
+                    : "grayscale(60%) contrast(0.9) blur(0.5px)",
+              }}
+            >
               <img
-                src={images[index]}
-                alt={`active-${index}`}
-                className="absolute inset-0 w-full h-full object-contain"
+                src={img}
+                alt={`book-${i}`}
+                className="w-full h-full object-cover"
                 draggable={false}
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/5 to-black/30" />
-              <div className="absolute left-6 bottom-4 bg-black/50 text-white rounded-md px-3 py-1 text-sm backdrop-blur">
-                {index + 1} / {length}
-              </div>
             </div>
-          )}
-
-          {/* Right preview */}
-          {length > 0 && (
-            <img
-              src={images[nextIndex]}
-              alt={`next-${nextIndex}`}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 w-[220px] h-[330px] rounded-xl shadow-lg object-contain opacity-40 scale-90 blur-sm bg-black transition-all duration-600"
-              draggable={false}
-            />
-          )}
-
-          {/* Arrows */}
-          {length > 0 && (
-            <>
-              <button
-                aria-label="previous"
-                onClick={prev}
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white/90 hover:bg-white text-gray-800 rounded-full shadow-md pointer-events-auto"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M15 18L9 12L15 6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-              <button
-                aria-label="next"
-                onClick={next}
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white/90 hover:bg-white text-gray-800 rounded-full shadow-md pointer-events-auto"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M9 6L15 12L9 18"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Center dots */}
-      {length > 0 && (
-        <div className="flex items-center justify-center mt-4 gap-3">
-          {images.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => goTo(i)}
-              className={`w-3 h-3 rounded-full transition-all ${
-                i === index ? "bg-white scale-125" : "bg-white/40"
-              }`}
-            />
           ))}
         </div>
-      )}
+
+        {/* Slogan trái */}
+        <div className="absolute left-20 top-1/2 -translate-y-1/2 w-[300px] text-[20px] italic text-gray-100 leading-snug opacity-90">
+          <span className="whitespace-pre-line">{leftText}</span>
+        </div>
+
+        {/* Slogan phải */}
+        <div className="absolute right-20 top-1/2 -translate-y-1/2 w-[300px] text-[20px] italic text-gray-100 text-right leading-snug opacity-90">
+          <span className="whitespace-pre-line">{rightText}</span>
+        </div>
+      </div>
     </div>
   );
 }

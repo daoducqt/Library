@@ -1,12 +1,8 @@
-import Header from "@/component/header";
-import Slider from "@/component/slider";
-import Image from "next/image";
-
+import HomePage from "@/component/homePage";
 export default function Home() {
   return (
     <>
-      <Header />
-      <Slider />
+      <HomePage />
     </>
   );
 }
