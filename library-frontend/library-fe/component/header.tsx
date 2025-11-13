@@ -15,7 +15,6 @@ export default function Header({ onSearch }: Props) {
     console.log("Search:", query);
   };
 
-
   return (
     <header className="bg-amber-50/80 backdrop-blur-sm text-amber-900 shadow-sm border-b border-amber-200/60">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
