@@ -1,23 +1,52 @@
-const express = require("express");
-const cors = require("cors");
-const dotenv = require("dotenv");
-const connectDB = require("./config/db");
-const bookRoutes = require("./src/routes/Books");
-const User = require("./src/routes/User");
+import express from 'express';
+import dbConfig from './core/config/db.js';
+import { createServer } from "http";
+import { routes } from './src/index.js';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import dotenv from 'dotenv';
 dotenv.config();
-connectDB();
+console.log(">>> Loaded PORT from .env:", process.env.PORT);
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const server = createServer(app);
 
-// Middleware
-app.use(cors());
+// biên dịch
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-// Routes
-app.use("/api/books", bookRoutes);
-app.use("/auth", User);
-app.get("/", (req, res) => res.send("Library API running"));
+// secure 
+app.set("trust proxy", "loopback"); // trust first proxy
+app.use(
+    cors({
+        origin: process.env.CLIENT_URL || 'http://localhost:3000',
+        credentials: true,
+         // methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    // allowedHeaders: [
+    //   'Content-Type',
+    //   'Authorization',
+    //   'Accept',
+    //   'X-Requested-With',
+    //   'Origin',
+    // ],
+    })
+);
 
-// Start server
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// routes
+routes(app);
+
+// connect 
+
+const PORT = process.env.PORT || 3001;
+dbConfig
+    .connectDb()
+    .then(() => {
+        server.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+    })
+    .catch((err) => {
+        console.error("DB connection error:", err);
+        process.exit(1);
+    });
