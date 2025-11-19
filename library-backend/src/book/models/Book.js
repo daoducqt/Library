@@ -10,6 +10,11 @@ const BookSchema = new Schema(
     publishedYear: Number,
     genre: String,
     available: { type: Boolean, default: true },
+
+    // dùng để lưu sách từ Open Library
+    subjects: { type: String, index: true },
+    coverId : Number,
+
   }, 
   { timestamps: true }
 );

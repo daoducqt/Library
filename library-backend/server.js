@@ -6,7 +6,6 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 dotenv.config();
-console.log(">>> Loaded PORT from .env:", process.env.PORT);
 
 const app = express();
 const server = createServer(app);

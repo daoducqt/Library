@@ -5,9 +5,12 @@ import authenticationMiddleware from "../../../core/middleware/authentication.js
 import { validateRequest } from "../../../core/middleware/validationRequest.js";
 import { RoleTypeEnum } from "../../user/models/User.js";
 
+import importBookToDb from "../controllers/importOpenLB.js";
+
 const router = express.Router();
 
 router.route("/").get(getBooks.excecute);
+router.route("/importBooks").get(importBookToDb.excecute);
 
 router
   .route("/create")
