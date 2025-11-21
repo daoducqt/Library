@@ -6,11 +6,13 @@ import { validateRequest } from "../../../core/middleware/validationRequest.js";
 import { RoleTypeEnum } from "../../user/models/User.js";
 
 import importBookToDb from "../controllers/importOpenLB.js";
+import searchBook from "../controllers/searchBook.js";
 
 const router = express.Router();
 
 router.route("/").get(getBooks.excecute);
 router.route("/importBooks").get(importBookToDb.excecute);
+router.route("/search").get(searchBook.excecute);
 
 router
   .route("/create")
@@ -22,5 +24,6 @@ router
     ],
     create.excecute
   );
+
 
 export default router;
