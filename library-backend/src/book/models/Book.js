@@ -12,7 +12,7 @@ const BookSchema = new Schema(
     available: { type: Boolean, default: true },
 
     // dùng để lưu sách từ Open Library
-    subjects: { type: String, index: true },
+    subjects: [{ type: String, index: true }], // lưu nhiều subject liên quan đến sách
     coverId : Number,
 
   }, 

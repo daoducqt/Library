@@ -35,12 +35,28 @@ const excecute = async (req, res) => {
         }
 
         // Map dữ liệu từ Open Library sang định dạng của Book model
-        const formattedBooks = works.map((item) => ({
-            title: item.title,
-            author: item.authors?.[0]?.name || "Unknown",
-            coverId: item.cover_id || null,
-            subject,
-        }));
+        const formattedBooks = works.map((item) => {
+            const itemSubjects = [];
+
+            if (Array.isArray(item.subjects)) {
+                itemSubjects.push(...item.subjects.map(sub => sub.toLowerCase()));
+            }
+            if (Array.isArray(item.subject)) {
+                itemSubjects.push(...item.subject.map(sub => sub.toLowerCase()));
+            }
+            if (!itemSubjects.includes(subject)) {
+                itemSubjects.push(subject);
+            }
+
+            return {
+                title: item.title,
+                author: item.authors?.[0]?.name || "Unknown",
+                description: item.description ? (typeof item.description === 'string' ? item.description : item.description.value) : "No description available",
+                publishedYear: item.first_publish_year || null,
+                coverId: item.cover_id || null,
+                subjects: itemSubjects,
+            }
+        });
 
         // Lưu vào database (insertMany). Consider using upsert or checking duplicates in production.
         await Book.insertMany(formattedBooks);
