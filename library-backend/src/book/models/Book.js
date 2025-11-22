@@ -1,4 +1,5 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
+
 const { Schema, model } = mongoose;
 
 const BookSchema = new Schema(
@@ -9,8 +10,13 @@ const BookSchema = new Schema(
     publishedYear: Number,
     genre: String,
     available: { type: Boolean, default: true },
+
+    // dùng để lưu sách từ Open Library
+    subjects: [{ type: String, index: true }], // lưu nhiều subject liên quan đến sách
+    coverId : Number,
+
   }, 
   { timestamps: true }
 );
 
-module.exports = model("Book", BookSchema);
+export default model("Book", BookSchema);
