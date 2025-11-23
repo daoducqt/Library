@@ -4,8 +4,6 @@ import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
 import bcrypt from "bcrypt";
 import User from "../models/User.js";
 import { generateAccessToken, generateRefreshToken } from "../services/user.service.js";
-import dotenv from "dotenv";
-dotenv.config();
 
 /* VALIDATION */
 const validate = Joi.object({
@@ -13,7 +11,7 @@ const validate = Joi.object({
     "string.base": "Tài khoản phải là chuỗi",
     "any.required": "Tài khoản là bắt buộc",
   }),
-  password: Joi.string().required().trim().messages({
+  password: Joi.string().required().trim().min(1).messages({
     "string.base": "Mật khẩu phải là một chuỗi",
     "any.required": "Mật khẩu là bắt buộc",
   }),
@@ -41,7 +39,7 @@ const excecute = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(StatusCodes.UNAUTHORIZED).send({
         status: StatusCodes.UNAUTHORIZED,
-        message: "Mật khẩu không chính xác",
+        message: "Tên người dùng hoặc mật khẩu không chính xác",
       });
     }
 
@@ -58,11 +56,11 @@ const excecute = async (req, res) => {
 
     return res.status(StatusCodes.OK).send({
       status: StatusCodes.OK,
-      message: ReasonPhrases.OK,
+      message: ReasonPhrases.OK || "Đăng nhập thành công",
       data: {
         user: userData,
         accessToken,
-        refreshToken,
+        // refreshToken optional — nếu lưu cookie thì không cần gửi body
       },
     });
 
@@ -70,7 +68,7 @@ const excecute = async (req, res) => {
     console.error("LOGIN ERROR:", error);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       status: StatusCodes.INTERNAL_SERVER_ERROR,
-      message: ReasonPhrases.INTERNAL_SERVER_ERROR,
+      message: ReasonPhrases.INTERNAL_SERVER_ERROR || "Lỗi máy chủ",
     });
   }
 };
