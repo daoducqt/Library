@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
-import Book from "../../models/Book.js";
+import Book from "../models/Book.js";
 
 const excecute = async (req, res) => {
     try {
@@ -16,6 +16,7 @@ const excecute = async (req, res) => {
         }
 
         const data = await Book.findById(id);
+        const coverUrl = data.coverId?`https://covers.openlibrary.org/b/id/${data.coverId}-L.jpg`:null;
 
         if (!data) {
             return res.status(StatusCodes.NOT_FOUND).send({
@@ -27,7 +28,7 @@ const excecute = async (req, res) => {
         return res.status(StatusCodes.OK).send({
             status: StatusCodes.OK,
             message: ReasonPhrases.OK,
-            data: data,
+            data: {...data.toObject(), coverUrl},
         });
 
     } catch (error) {
