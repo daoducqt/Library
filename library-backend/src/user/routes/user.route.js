@@ -6,13 +6,13 @@ import authenticationMiddleware from "../../../core/middleware/authentication.js
 import { RoleTypeEnum } from "../models/User.js";
 import create from "../controllers/create.js";
 import getList from "../controllers/getList.js";
-import { get } from "mongoose";
+
 
 const router = express.Router();
 // router.route("/register").post(register.excecute);
 
 router.route("/register").post(validateRequest(register.validate), register.excecute);
-router.route("/login").post([validateRequest(login.validate)], login.excecute);
+router.route("/login").post(validateRequest(login.validate), login.excecute);
 
 router
   .route("/create")

@@ -7,10 +7,11 @@ import { RoleTypeEnum } from "../../user/models/User.js";
 
 import importBookToDb from "../controllers/importOpenLB.js";
 import searchBook from "../controllers/searchBook.js";
+import getDetailBook from "../controllers/bookDetail.js";
 
 const router = express.Router();
 
-router.route("/").get(getBooks.excecute);
+router.route("/getBookList").get(getBooks.excecute);
 router.route("/importBooks").get(importBookToDb.excecute);
 router.route("/search").get(searchBook.excecute);
 
@@ -24,6 +25,8 @@ router
     ],
     create.excecute
   );
+
+router.route("/detailBook/:id").get(getDetailBook.excecute);
 
 
 export default router;
