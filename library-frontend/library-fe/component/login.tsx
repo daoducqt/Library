@@ -1,10 +1,15 @@
 "use client";
+import { userApi } from "@/service/login/login";
 import React, { useState, useEffect } from "react";
-
+import { useRouter } from "next/navigation"; // Thêm import này
+import { LoginResponse } from "@/type/login";
 export default function Login() {
+  const router = useRouter(); // Thêm hook này
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   interface Particle {
     id: number;
@@ -30,10 +35,54 @@ export default function Login() {
     setParticles(newParticles);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({ email, password });
-    alert("Đã gửi yêu cầu đăng nhập (demo).");
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const response = await userApi.login({
+        account: email,
+        password: password,
+      });
+
+      const data = response?.data;
+
+      console.log("Login successful:", data);
+
+      // Lưu tokens và user info vào localStorage
+      if (data?.accessToken) {
+        document.cookie = `accessToken=${data.accessToken}; path=/; secure; samesite=strict`;
+        localStorage.setItem("refreshToken", data.refreshToken);
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        // Chỉ chuyển trang khi login thành công
+        router.push("/");
+      } else {
+        setError("Đăng nhập thất bại. Vui lòng thử lại.");
+      }
+    } catch (err: unknown) {
+      console.error("Login error:", err);
+
+      // Type guard để kiểm tra axios error
+      if (err && typeof err === "object" && "response" in err) {
+        const error = err as {
+          response?: {
+            data?: {
+              message?: string;
+            };
+          };
+        };
+        setError(
+          error.response?.data?.message ||
+            "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."
+        );
+      } else {
+        setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const coverImages = [

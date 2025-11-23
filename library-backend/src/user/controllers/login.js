@@ -1,4 +1,3 @@
-
 import Joi from "joi";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
@@ -8,10 +7,11 @@ import { generateAccessToken, generateRefreshToken } from "../services/user.serv
 import dotenv from "dotenv";
 dotenv.config();
 
+/* VALIDATION */
 const validate = Joi.object({
-  userName: Joi.string().required().trim().messages({
-    "string.base": "Tên người dùng phải là chuỗi",
-    "any.required": "Tên người dùng là bắt buộc",
+  account: Joi.string().required().trim().messages({
+    "string.base": "Tài khoản phải là chuỗi",
+    "any.required": "Tài khoản là bắt buộc",
   }),
   password: Joi.string().required().trim().messages({
     "string.base": "Mật khẩu phải là một chuỗi",
@@ -19,19 +19,24 @@ const validate = Joi.object({
   }),
 });
 
+/* LOGIN FUNCTION */
 const excecute = async (req, res) => {
   try {
-    const { phone, password } = req.body;
+    const { account, password } = req.body;
 
-    let user = await User.findOne({ phone: phone });
+    // Tìm theo phone hoặc userName hoặc email
+    const user = await User.findOne({
+      $or: [{ phone: account }, { userName: account }, { email: account }]
+    });
 
     if (!user) {
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
-        status: StatusCodes.INTERNAL_SERVER_ERROR,
-        message: `Không tồn tại tài khoản này`,
+      return res.status(StatusCodes.UNAUTHORIZED).send({
+        status: StatusCodes.UNAUTHORIZED,
+        message: `Tài khoản không tồn tại`,
       });
     }
 
+    // So sánh mật khẩu
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(StatusCodes.UNAUTHORIZED).send({
@@ -40,15 +45,18 @@ const excecute = async (req, res) => {
       });
     }
 
-    delete user.password;
-    const userData = JSON.parse(JSON.stringify(user));
+    // Xoá mật khẩu ra khỏi dữ liệu trả về
+    const userData = user.toObject();
+    delete userData.password;
+
+    // Generate Tokens
     const accessToken = generateAccessToken(userData);
     const refreshToken = generateRefreshToken(userData);
 
-    // Save refresh token in database
-    await User.findByIdAndUpdate({ _id: user._id }, { refreshToken: refreshToken });
+    // Lưu refresh token vào DB
+    await User.findByIdAndUpdate(user._id, { refreshToken });
 
-    res.status(StatusCodes.OK).send({
+    return res.status(StatusCodes.OK).send({
       status: StatusCodes.OK,
       message: ReasonPhrases.OK,
       data: {
@@ -57,9 +65,10 @@ const excecute = async (req, res) => {
         refreshToken,
       },
     });
+
   } catch (error) {
-    console.error(error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
+    console.error("LOGIN ERROR:", error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       status: StatusCodes.INTERNAL_SERVER_ERROR,
       message: ReasonPhrases.INTERNAL_SERVER_ERROR,
     });

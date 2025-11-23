@@ -9,7 +9,7 @@ const isNullOrEmpty = (s?: string | null): boolean => !s || s.trim() === "";
 
 // base abstract class
 export abstract class RepositoryBase {
-  protected axios: AxiosInstance;
+  public axios: AxiosInstance;
 
   constructor(baseURL?: string) {
     const envUrl = baseURL ?? process.env.NEXT_PUBLIC_API_URL;
@@ -26,8 +26,8 @@ export abstract class RepositoryBase {
     // interceptor thêm token từ localStorage
     this.axios.interceptors.request.use((config) => {
       if (typeof window !== "undefined") {
-        const token = localStorage.getItem("token")?.replace(/"/g, "");
-        if (token) {
+        const token = localStorage.getItem("accessToken")?.replace(/"/g, "");
+        if (token && config.url !== "/user/login") {
           config.headers = config.headers ?? {};
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -38,7 +38,7 @@ export abstract class RepositoryBase {
 
   // --- CRUD cơ bản ---
 
-  protected async get<T = unknown>(
+  public async get<T = unknown>(
     url: string,
     config?: AxiosRequestConfig
   ): Promise<T | null> {
@@ -52,7 +52,7 @@ export abstract class RepositoryBase {
     }
   }
 
-  protected async post<T = unknown>(
+  public async post<T = unknown>(
     url: string,
     data?: unknown,
     config?: AxiosRequestConfig
@@ -67,7 +67,7 @@ export abstract class RepositoryBase {
     }
   }
 
-  protected async put<T = unknown>(
+  public async put<T = unknown>(
     url: string,
     data?: unknown,
     config?: AxiosRequestConfig
@@ -82,7 +82,7 @@ export abstract class RepositoryBase {
     }
   }
 
-  protected async delete<T = unknown>(
+  public async delete<T = unknown>(
     url: string,
     data?: unknown,
     config?: AxiosRequestConfig
@@ -120,16 +120,19 @@ export abstract class RepositoryBase {
       case 400:
         NotificationExtension.Fails(message || "Yêu cầu không hợp lệ!");
         break;
-      case 401:
-        NotificationExtension.Fails("Phiên đăng nhập hết hạn!");
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("token");
-          window.location.href = `/auth/login?callback=${window.location.pathname}`;
-        }
-        break;
-      case 403:
-        NotificationExtension.Fails("Bạn không có quyền thực hiện chức năng này!");
-        break;
+     case 401:
+  NotificationExtension.Fails("Phiên đăng nhập thất bại hoặc token hết hạn!");
+
+  if (typeof window !== "undefined") {
+    const isLoginPage = window.location.pathname.startsWith("/login");
+
+    // chỉ redirect nếu KHÔNG phải trang login
+    if (!isLoginPage) {
+      localStorage.removeItem("accessToken");
+      window.location.href = `/auth/login?callback=${window.location.pathname}`;
+    }
+  }
+  break;
       case 404:
         NotificationExtension.Fails(message || "Tài nguyên không tồn tại!");
         break;
