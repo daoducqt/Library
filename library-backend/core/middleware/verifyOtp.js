@@ -4,7 +4,7 @@ import StatusCodes from "../utils/statusCode/statusCode.js";
 import ReasonPhrases from "../utils/statusCode/reasonPhares.js";
 import { generateAccessToken } from "../../src/user/services/user.service.js";
 
-export const verifyOtp = async (req, res) => {
+const excecute = async (req, res) => {
   try {
     const { account, otp, type } = req.body;
 
@@ -79,3 +79,5 @@ export const verifyOtp = async (req, res) => {
     });
   }
 };
+
+export default { excecute };
