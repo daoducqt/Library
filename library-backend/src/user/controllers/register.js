@@ -4,6 +4,7 @@ import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
 import User from "../models/User.js";
 import { RoleTypeEnum } from "../models/User.js";
 import bcrypt from "bcrypt";
+import sendMail from "../../../core/utils/sendMail.js";
 
 const validate = Joi.object({
   userName: Joi.string().required().trim().messages({
@@ -26,7 +27,7 @@ const validate = Joi.object({
   }),
 });
 
-const excecute = async (req, res) => {
+const excecute = async (req, res) => {  
   try {
     const input = req.body;
     input.role = RoleTypeEnum.USER;
@@ -55,13 +56,24 @@ const excecute = async (req, res) => {
     const hashedPassword = await bcrypt.hash(input.password, 10);
     input.password = hashedPassword;
 
+    // Tạo User chưa verifu
+    input.isVerified = false;
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    input.otpCode = otp;
+    input.otpExpires = new Date(Date.now() + 2 * 60 * 1000);
+
     // ─── CREATE USER ─────────────────────────────────────
-    const data = await User.create(input);
+    const user = await User.create(input);
+
+    // Gửi otp
+    if (user.email) await sendMail(user.email, `Mã OTP của bạn là: ${otp}`);
 
     return res.status(StatusCodes.OK).send({
       status: StatusCodes.OK,
       message: ReasonPhrases.OK,
-      data,
+      userId: user._id,
     });
 
   } catch (error) {

@@ -6,7 +6,8 @@ import authenticationMiddleware from "../../../core/middleware/authentication.js
 import { RoleTypeEnum } from "../models/User.js";
 import create from "../controllers/create.js";
 import getList from "../controllers/getList.js";
-
+import resendOtp from "../../../core/middleware/resendOtp.js";
+import verifyOtp from "../../../core/middleware/verifyOtp.js";
 
 const router = express.Router();
 // router.route("/register").post(register.excecute);
@@ -26,5 +27,8 @@ router
   );
 
 router.route("/").get(getList.excecute);
+
+router.route("/resend-otp").post(resendOtp.excecute);
+router.route("/verify-otp").post(verifyOtp.excecute);
 
 export default router;

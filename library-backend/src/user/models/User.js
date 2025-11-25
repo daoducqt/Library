@@ -24,6 +24,11 @@ const userSchema = new Schema(
       index: true,
       enum: Object.values(RoleTypeEnum),
     },
+
+    // OTP cho đăng ký
+    otpCode: { type: String, select: false },
+    otpExpires: { type: Date, select: false },
+    isVerified: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
