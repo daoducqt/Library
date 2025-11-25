@@ -5,4 +5,5 @@ const router = express.Router();
 
 router.route("/send-otp").post(sendOtp.excecute);
 
+
 export default router;

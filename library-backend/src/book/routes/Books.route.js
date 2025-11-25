@@ -8,6 +8,7 @@ import { RoleTypeEnum } from "../../user/models/User.js";
 import importBookToDb from "../controllers/importOpenLB.js";
 import searchBook from "../controllers/searchBook.js";
 import getDetailBook from "../controllers/bookDetail.js";
+import bookView from "../controllers/bookView.js";
 
 const router = express.Router();
 
@@ -27,6 +28,6 @@ router
   );
 
 router.route("/detailBook/:id").get(getDetailBook.excecute);
-
+router.route("/view/:id").patch(bookView.excecute);
 
 export default router;
