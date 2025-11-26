@@ -44,12 +44,27 @@ const excecute = async (req, res) => {
     // Lưu refresh token vào DB
     await User.findByIdAndUpdate(user._id, { refreshToken });
 
-    return res.status(200).send({
-      status: 200,
-      message: "Google login thành công",
-      data: { user: userData, accessToken, refreshToken },
-    });
+    // return res.status(200).send({
+    //   status: 200,
+    //   message: "Google login thành công",
+    //   data: { user: userData, accessToken, refreshToken },
+    // });
 
+    // Set HttpOnly Cookies
+res.cookie("accessToken", accessToken, {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+});
+
+res.cookie("refreshToken", refreshToken, {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+});
+
+// Redirect về frontend sau đăng nhập
+return res.redirect(process.env.FRONTEND_URL + "/");
   } catch (error) {
     console.error("Google Login Error:", error);
     return res.status(500).send({ message: "Google login failed" });

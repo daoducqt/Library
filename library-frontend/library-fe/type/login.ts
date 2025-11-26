@@ -22,3 +22,7 @@ export interface LoginRequest {
   account: string;
   password: string;
 }
+
+export interface LoginGoogleResponse {
+    url: string;
+}

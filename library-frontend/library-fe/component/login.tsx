@@ -1,5 +1,5 @@
 "use client";
-import { userApi } from "@/service/login/login";
+import { loginEmail, userApi } from "@/service/login/login";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation"; // Thêm import này
 import { LoginResponse } from "@/type/login";
@@ -97,6 +97,19 @@ export default function Login() {
   const prevCover = () =>
     setActiveCover((s) => (s - 1 + coverImages.length) % coverImages.length);
   const nextCover = () => setActiveCover((s) => (s + 1) % coverImages.length);
+
+  const handleGoogleLogin = async () => {
+    try {
+      const res = await loginEmail();
+      // Nếu API trả về url đăng nhập Google, chuyển hướng sang đó
+      if (res?.url) {
+        window.location.href = res.url;
+      }
+    } catch (err) {
+      console.error("Google login error:", err);
+      // Có thể hiển thị thông báo lỗi nếu muốn
+    }
+  };
 
   return (
     <div
@@ -522,6 +535,7 @@ export default function Login() {
               <div className="mt-3 flex justify-center gap-3">
                 <button
                   type="button"
+                  onClick={handleGoogleLogin}
                   className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-purple-500/30 bg-slate-800/50 text-purple-200 hover:bg-slate-800 hover:shadow-lg hover:shadow-purple-500/30 hover:scale-105 transition-all hover:border-purple-400/50"
                   aria-label="Sign in with Google"
                 >
