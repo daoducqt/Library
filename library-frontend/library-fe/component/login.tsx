@@ -1,10 +1,15 @@
 "use client";
+import { loginEmail, userApi } from "@/service/login/login";
 import React, { useState, useEffect } from "react";
-
+import { useRouter } from "next/navigation"; // Thêm import này
+import { LoginResponse } from "@/type/login";
 export default function Login() {
+  const router = useRouter(); // Thêm hook này
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   interface Particle {
     id: number;
@@ -30,10 +35,54 @@ export default function Login() {
     setParticles(newParticles);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({ email, password });
-    alert("Đã gửi yêu cầu đăng nhập (demo).");
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const response = await userApi.login({
+        account: email,
+        password: password,
+      });
+
+      const data = response?.data;
+
+      console.log("Login successful:", data);
+
+      // Lưu tokens và user info vào localStorage
+      if (data?.accessToken) {
+        document.cookie = `accessToken=${data.accessToken}; path=/; secure; samesite=strict`;
+        localStorage.setItem("refreshToken", data.refreshToken);
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        // Chỉ chuyển trang khi login thành công
+        router.push("/");
+      } else {
+        setError("Đăng nhập thất bại. Vui lòng thử lại.");
+      }
+    } catch (err: unknown) {
+      console.error("Login error:", err);
+
+      // Type guard để kiểm tra axios error
+      if (err && typeof err === "object" && "response" in err) {
+        const error = err as {
+          response?: {
+            data?: {
+              message?: string;
+            };
+          };
+        };
+        setError(
+          error.response?.data?.message ||
+            "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."
+        );
+      } else {
+        setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const coverImages = [
@@ -48,6 +97,19 @@ export default function Login() {
   const prevCover = () =>
     setActiveCover((s) => (s - 1 + coverImages.length) % coverImages.length);
   const nextCover = () => setActiveCover((s) => (s + 1) % coverImages.length);
+
+  const handleGoogleLogin = async () => {
+    try {
+      const res = await loginEmail();
+      // Nếu API trả về url đăng nhập Google, chuyển hướng sang đó
+      if (res?.url) {
+        window.location.href = res.url;
+      }
+    } catch (err) {
+      console.error("Google login error:", err);
+      // Có thể hiển thị thông báo lỗi nếu muốn
+    }
+  };
 
   return (
     <div
@@ -473,6 +535,7 @@ export default function Login() {
               <div className="mt-3 flex justify-center gap-3">
                 <button
                   type="button"
+                  onClick={handleGoogleLogin}
                   className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-purple-500/30 bg-slate-800/50 text-purple-200 hover:bg-slate-800 hover:shadow-lg hover:shadow-purple-500/30 hover:scale-105 transition-all hover:border-purple-400/50"
                   aria-label="Sign in with Google"
                 >

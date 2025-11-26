@@ -5,10 +5,11 @@ import bcrypt from "bcrypt";
 import User from "../models/User.js";
 import { generateAccessToken, generateRefreshToken } from "../services/user.service.js";
 
+/* VALIDATION */
 const validate = Joi.object({
-  userName: Joi.string().required().trim().min(1).messages({
-    "string.base": "Tên người dùng phải là chuỗi",
-    "any.required": "Tên người dùng là bắt buộc",
+  account: Joi.string().required().trim().messages({
+    "string.base": "Tài khoản phải là chuỗi",
+    "any.required": "Tài khoản là bắt buộc",
   }),
   password: Joi.string().required().trim().min(1).messages({
     "string.base": "Mật khẩu phải là một chuỗi",
@@ -16,28 +17,24 @@ const validate = Joi.object({
   }),
 });
 
+/* LOGIN FUNCTION */
 const excecute = async (req, res) => {
   try {
-    const { userName, password } = req.body;
+    const { account, password } = req.body;
 
-    // Find user by userName
-    const user = await User.findOne({ userName });
+    // Tìm theo phone hoặc userName hoặc email
+    const user = await User.findOne({
+      $or: [{ phone: account }, { userName: account }, { email: account }]
+    });
 
     if (!user) {
       return res.status(StatusCodes.UNAUTHORIZED).send({
         status: StatusCodes.UNAUTHORIZED,
-        message: "Tên người dùng hoặc mật khẩu không chính xác",
+        message: `Tài khoản không tồn tại`,
       });
     }
 
-    // Verify password
-    if (!user.password) {
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
-        status: StatusCodes.INTERNAL_SERVER_ERROR,
-        message: "Lỗi dữ liệu người dùng",
-      });
-    }
-
+    // So sánh mật khẩu
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(StatusCodes.UNAUTHORIZED).send({
@@ -46,25 +43,16 @@ const excecute = async (req, res) => {
       });
     }
 
-    // Convert to plain object and remove sensitive fields
-    const userData = user.toObject ? user.toObject() : { ...user._doc };
+    // Xoá mật khẩu ra khỏi dữ liệu trả về
+    const userData = user.toObject();
     delete userData.password;
-    delete userData.refreshToken;
 
-    // Generate tokens
+    // Generate Tokens
     const accessToken = generateAccessToken(userData);
     const refreshToken = generateRefreshToken(userData);
 
-    // Save refresh token to database
-    await User.findByIdAndUpdate(user._id, { refreshToken }, { new: true });
-
-    // Optional: set refreshToken in httpOnly cookie
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    // Lưu refresh token vào DB
+    await User.findByIdAndUpdate(user._id, { refreshToken });
 
     return res.status(StatusCodes.OK).send({
       status: StatusCodes.OK,
@@ -75,8 +63,9 @@ const excecute = async (req, res) => {
         // refreshToken optional — nếu lưu cookie thì không cần gửi body
       },
     });
+
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("LOGIN ERROR:", error);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       status: StatusCodes.INTERNAL_SERVER_ERROR,
       message: ReasonPhrases.INTERNAL_SERVER_ERROR || "Lỗi máy chủ",
