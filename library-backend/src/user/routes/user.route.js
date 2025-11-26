@@ -8,6 +8,8 @@ import create from "../controllers/create.js";
 import getList from "../controllers/getList.js";
 import resendOtp from "../../../core/middleware/resendOtp.js";
 import verifyOtp from "../../../core/middleware/verifyOtp.js";
+import googleUrl from "../controllers/googleUrl.js";
+import googleCallBack from "../controllers/googleCallBack.js";
 
 const router = express.Router();
 // router.route("/register").post(register.excecute);
@@ -30,5 +32,8 @@ router.route("/").get(getList.excecute);
 
 router.route("/resend-otp").post(resendOtp.excecute);
 router.route("/verify-otp").post(verifyOtp.excecute);
+
+router.route("/google/url").get(googleUrl.excecute);
+router.route("/google/callback").get(googleCallBack.excecute);
 
 export default router;
