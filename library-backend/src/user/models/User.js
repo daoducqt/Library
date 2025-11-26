@@ -16,7 +16,7 @@ const userSchema = new Schema(
     phone: { type: String, unique: true, sparse: true },
     password: { type: String, required: true },
     refreshToken: { type: String, select: false },
-    // fullName: { type: String },
+    fullName: { type: String, required: true, unique: true },
     avatar: { type: String },
     role: {
       type: String,
@@ -25,7 +25,15 @@ const userSchema = new Schema(
       enum: Object.values(RoleTypeEnum),
     },
 
-    // OTP cho đăng ký
+    status: {
+    type: String,
+    enum: ["ACTIVE", "BANNED"],
+    default: "ACTIVE"
+  },
+
+
+    // OTP 
+    pendingEmail: String,
     otpCode: { type: String, select: false },
     otpExpires: { type: Date, select: false },
     isVerified: { type: Boolean, default: false },

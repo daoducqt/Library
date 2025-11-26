@@ -6,6 +6,10 @@ import { RoleTypeEnum } from "../models/User.js";
 import bcrypt from "bcrypt";
 
 const validate = Joi.object({
+  userName: Joi.string().required().trim().messages({
+    "string.base": "Tên tài khoản dùng phải là chuỗi",
+    "any.required": "Tên tài khoản là bắt buộc",
+  }),
   phone: Joi.string().required().trim().messages({
     "string.base": "Số điện thoại phải là chuỗi",
     "any.required": "Số điện thoại là bắt buộc",
