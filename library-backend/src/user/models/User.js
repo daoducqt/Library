@@ -16,7 +16,7 @@ const userSchema = new Schema(
     phone: { type: String, unique: true, sparse: true },
     password: { type: String, required: true },
     refreshToken: { type: String, select: false },
-    fullName: { type: String, required: true, unique: true },
+    fullName: { type: String, required: true },
     avatar: { type: String },
     role: {
       type: String,
@@ -32,7 +32,7 @@ const userSchema = new Schema(
   },
 
 
-    // OTP 
+    // OTP cho đăng ký
     pendingEmail: String,
     otpCode: { type: String, select: false },
     otpExpires: { type: Date, select: false },

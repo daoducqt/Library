@@ -30,20 +30,20 @@ const excecute = async (req, res) => {
       });
     }
 
-    // ckeck status
-    if (user.status === "BANNED") {
-        return res.status(StatusCodes.FORBIDDEN).send({
-          status: StatusCodes.FORBIDDEN,
-          message: "Tài khoản đã bị khóa, vui lòng liên hệ quản trị viên."
-        });
-    }
-
     // Verify password
     if (!user.password) {
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
         status: StatusCodes.INTERNAL_SERVER_ERROR,
         message: "Lỗi dữ liệu người dùng",
       });
+    }
+
+    // ckeck status
+    if (user.status === "BANNED") {
+        return res.status(StatusCodes.FORBIDDEN).send({
+          status: StatusCodes.FORBIDDEN,
+          message: "Tài khoản đã bị khóa, vui lòng liên hệ quản trị viên."
+        });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
