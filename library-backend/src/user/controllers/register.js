@@ -7,9 +7,13 @@ import bcrypt from "bcrypt";
 import sendMail from "../../../core/utils/sendMail.js";
 
 const validate = Joi.object({
-  userName: Joi.string().required().trim().messages({
+  fullName: Joi.string().required().trim().messages({
     "string.base": "Tên người dùng phải là chuỗi",
     "any.required": "Tên người dùng là bắt buộc",
+  }),
+  userName: Joi.string().required().trim().messages({
+    "string.base": "Tên tài khoản dùng phải là chuỗi",
+    "any.required": "Tên tài khoản là bắt buộc",
   }),
 
   email: Joi.string().email().allow(null, "").trim().messages({
