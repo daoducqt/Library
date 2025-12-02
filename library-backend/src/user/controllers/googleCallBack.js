@@ -69,19 +69,19 @@ const excecute = async (req, res) => {
     // Set HttpOnly Cookies
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: false,
+      secure: true,
       sameSite: "none",
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false,
+      secure: true,
       sameSite: "none",
     });
 
     // redirect về FE
-    return res.redirect(process.env.PRONTEND_URL + "/");
-
+    return res.redirect(process.env.FRONTEND_URL + "/");
+s
   } catch (error) {
     console.error("Google Login Error:", error);
     return res.status(500).send({ message: "Google login failed" });

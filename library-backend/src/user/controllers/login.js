@@ -6,7 +6,7 @@ import User from "../models/User.js";
 import { generateAccessToken, generateRefreshToken } from "../services/user.service.js";
 
 const validate = Joi.object({
-  userName: Joi.string().required().trim().min(1).messages({
+  account: Joi.string().required().trim().min(1).messages({
     "string.base": "Tên người dùng phải là chuỗi",
     "any.required": "Tên người dùng là bắt buộc",
   }),
@@ -18,10 +18,12 @@ const validate = Joi.object({
 
 const excecute = async (req, res) => {
   try {
-    const { userName, password } = req.body;
+    const { account , password } = req.body;
 
     // Find user by userName
-    const user = await User.findOne({ userName });
+    const user = await User.findOne({ 
+      $or: [ { userName: account }, { email: account } ]
+     });
 
     if (!user) {
       return res.status(StatusCodes.UNAUTHORIZED).send({
