@@ -59,6 +59,7 @@ router.route("/disable/:id").patch(disableBook.excecute);
 router.route("/enable/:id").patch(enableBook.excecute); 
 
 // Lấy sách theo category
+// slug trong Map.js ở category
 router.route("/category/:slug").get(getByCategory.excecute);
 
 export default router;
