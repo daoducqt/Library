@@ -34,8 +34,10 @@ interface RecommendBook {
   cover_id: number;
   rating: number;
 }
-
-const BookDetailsPage: React.FC = () => {
+interface BookDetailsProps {
+  slug: string;
+}
+const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {

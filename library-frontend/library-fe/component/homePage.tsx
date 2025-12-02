@@ -4,11 +4,19 @@ import Header from "@/component/header";
 import Slider from "@/component/slider";
 import MainContent from "@/component/content";
 import { Books } from "@/type/book";
+import { getListBooks } from "@/service/books/getListBooks";
 
 export default function HomePage() {
   const [books, setBooks] = useState<Books[]>([]);
+  const [books2, setBooks2] = useState<Books[] | null>(null);
   const [images, setImages] = useState<string[]>([]);
 
+  useEffect(() => {
+    getListBooks().then((data) => {
+      setBooks2(data ?? null); // nếu undefined → gán null
+    });
+  }, []);
+  console.log(books2, "books2");
   const getAllFantasy = async () => {
     const all = [];
     const totalPages = 3;
@@ -32,12 +40,12 @@ export default function HomePage() {
   useEffect(() => {
     getAllFantasy();
   }, []);
-console.log(books, "books");
+  console.log(books, "books");
   return (
     <>
       {/* <Header /> */}
       <Slider images={images} autoplay interval={4000} />
-      <MainContent books={books} />
+      <MainContent books={books2} />
     </>
   );
 }

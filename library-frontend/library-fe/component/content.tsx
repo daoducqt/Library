@@ -72,11 +72,11 @@ const rankedRow = {
 };
 
 type MainContentProps = {
-  books: Books[];
+  books: Books[] | null;
 };
 
 /* ──────────────────────  Component  ────────────────────── */
-export default function MainContent({ books }: MainContentProps) {
+export default function MainContent({ books  }: MainContentProps) {
   const [activeFilter, setActiveFilter] = React.useState<string>("all");
 
   const filterTabs = [
@@ -85,13 +85,13 @@ export default function MainContent({ books }: MainContentProps) {
     { key: "restricted", label: "Hạn chế", icon: "🔒" },
   ];
 
-  const limitedBooks = React.useMemo(() => books.slice(0, 30), [books]);
+  const limitedBooks = React.useMemo(() => books?.slice(0, 30), [books]);
 
   const filteredBooks = React.useMemo(() => {
     if (activeFilter === "all") return limitedBooks;
     if (activeFilter === "public")
-      return limitedBooks.filter((b) => b.public_scan);
-    return limitedBooks.filter((b) => !b.public_scan);
+      return limitedBooks?.filter((b) => b.public_scan);
+    return limitedBooks?.filter((b) => !b.public_scan);
   }, [activeFilter, limitedBooks]);
 
   return (
@@ -238,7 +238,7 @@ export default function MainContent({ books }: MainContentProps) {
             {/* Grid cards */}
             <div className="p-8">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {filteredBooks.map((book, index) => (
+                {filteredBooks?.map((book, index) => (
                   <div
                     key={book.ia}
                     className="group bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-xl overflow-hidden shadow-xl hover:shadow-2xl hover:border-gray-600 hover:scale-105 hover:-translate-y-2 transition-all duration-500 cursor-pointer relative"

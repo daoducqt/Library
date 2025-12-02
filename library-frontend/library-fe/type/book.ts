@@ -39,3 +39,18 @@ export interface Books {
   ia_collection?: string[];
   subject?: string[];
 }
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages?: number;
+  hasNextPage?: boolean;
+  hasPrevPage?: boolean;
+}
+export interface ApiResponse {
+  status: number;
+  message?: string;
+  data: Books[];
+  pagination?: Pagination;
+}
