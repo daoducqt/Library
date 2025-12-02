@@ -15,7 +15,7 @@ const excecute = async (req, res) => {
             });
         }
 
-        const data = await Book.findById(id);
+        const data = await Book.findById(id).populate("categoryId", "name slug");
         const coverUrl = data.coverId?`https://covers.openlibrary.org/b/id/${data.coverId}-L.jpg`:null;
 
         if (!data) {

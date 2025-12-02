@@ -25,6 +25,7 @@
     "mongoose": "^8.18.0",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.10",
+    "slugify": "^1.6.6",
     "twilio": "^5.10.6"
   },
   "devDependencies": {
