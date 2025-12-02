@@ -26,7 +26,8 @@ const excecute = async (req, res) => {
         const data = await Book.find()
             .skip(skip)
             .limit(limit)
-            .sort({ createdAt: -1 }); // Sắp xếp mới nhất trước
+            .sort({ createdAt: -1 })
+            .populate("categoryId", "name slug");; // Sắp xếp mới nhất trước
 
         // Tính tổng số trang
         const totalPages = Math.ceil(total / limit);

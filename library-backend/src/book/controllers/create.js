@@ -22,19 +22,26 @@ const validate = Joi.object({
     }),
     genre: Joi.string().allow("", null),
     available: Joi.boolean(),
+    categoryId: Joi.string().hex().length(24).required().messages({
+    "string.base": "Category ID phải là chuỗi",
+    "string.length": "Category ID không hợp lệ",
+    "any.required": "Category là bắt buộc",
+    }),
 });
 
 const excecute = async (req, res) => {
     try {
         const input = req.body;
-        const data = await Book.create(input);
-
+        let data = await Book.create(input);
+        
         if (!data) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
                 status: StatusCodes.INTERNAL_SERVER_ERROR,
                 message: ReasonPhrases.INTERNAL_SERVER_ERROR,
             });
         }
+        
+        data = await data.populate("categoryId", "name slug");
 
         return res.status(StatusCodes.OK).send({
             status: StatusCodes.OK,

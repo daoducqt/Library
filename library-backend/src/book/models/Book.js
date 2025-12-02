@@ -2,20 +2,13 @@ import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
 
-// const ChapterShema = new Schema(
-//   {
-//     title: { type: String, required: true },
-//     content: { type: String, required: true },
-//     order: { type: Number, required: true },
-//   });
-
 const BookSchema = new Schema(
   {
     title: { type: String, required: true },
     author: String,
     description: String,
     publishedYear: Number,
-    genre: String,
+    // genre: String,
     available: { type: Boolean, default: true },
 
     // dùng để lưu sách từ Open Library
@@ -24,8 +17,8 @@ const BookSchema = new Schema(
 
     // lượt xem và chương sách
     views: { type: Number, default: 0 },
-    // chapters: [ChapterShema],
 
+    categoryId: { type: Schema.Types.ObjectId, ref: "Category" },
   }, 
   { timestamps: true }
 );
