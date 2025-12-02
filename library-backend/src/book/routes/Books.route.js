@@ -6,16 +6,25 @@ import { validateRequest } from "../../../core/middleware/validationRequest.js";
 import { RoleTypeEnum } from "../../user/models/User.js";
 
 import importBookToDb from "../controllers/importOpenLB.js";
-import searchBook from "../controllers/searchBook.js";
+import FilterBook from "../controllers/filter.js";
 import getDetailBook from "../controllers/bookDetail.js";
 import bookView from "../controllers/bookView.js";
+import updateBook from "../../book/controllers/updateBook.js";
+import disableBook from "../controllers/disableBook.js";
+import getByCategory from "../controllers/getByCategory.js";
+import enableBook from "../controllers/enableBook.js";
 
 const router = express.Router();
-
+// Lấy danh sách sách, có search + phân trang
 router.route("/getBookList").get(getBooks.excecute);
-router.route("/importBooks").get(importBookToDb.excecute);
-router.route("/search").get(searchBook.excecute);
 
+// Import sách từ Open Library dựa trên subject
+router.route("/importBooks").get(importBookToDb.excecute);
+
+// Lọc sách theo thể loại, năm xuất bản, trạng thái
+router.route("/Filter").get(FilterBook.excecute);
+
+// Tạo sách mới (Admin/Super Admin)
 router
   .route("/create")
   .post(
@@ -27,7 +36,30 @@ router
     create.excecute
   );
 
+// Lấy chi tiết 1 sách
 router.route("/detailBook/:id").get(getDetailBook.excecute);
+
+// Tăng lượt view sách
 router.route("/view/:id").patch(bookView.excecute);
+
+// Cập nhật sách (Admin/Super Admin)
+router
+  .route("/update/:id")
+  .patch(
+    [
+      authenticationMiddleware.verifyToken,
+      authenticationMiddleware.verifyRole(RoleTypeEnum.ADMIN, RoleTypeEnum.SUPER_ADMIN),
+      validateRequest(updateBook.validate),
+    ],
+    updateBook.excecute
+  );
+
+// Vô hiệu hóa / bật sách
+router.route("/disable/:id").patch(disableBook.excecute);
+router.route("/enable/:id").patch(enableBook.excecute); 
+
+// Lấy sách theo category
+// slug trong Map.js ở category
+router.route("/category/:slug").get(getByCategory.excecute);
 
 export default router;
