@@ -15,7 +15,7 @@ const excecute = async (req, res) => {
     const { otp } = req.body;
 
     // Tìm user
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select("+otpCode +otpExpires +pendingEmail");
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).send({
         status: StatusCodes.NOT_FOUND,

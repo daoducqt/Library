@@ -1,6 +1,14 @@
 // middlewares/uploadAvatar.js
 import multer from "multer";
 import path from "path";
+import fs from "fs";
+
+// Tạo thư mục lưu avatar nếu chưa tồn tại
+const dir = "uploads/avatars/";
+if (!fs.existsSync(dir)) {
+  fs.mkdirSync(dir, { recursive: true });
+}
+
 
 // Folder lưu avatar
 const storage = multer.diskStorage({

@@ -26,7 +26,7 @@ const router = express.Router();
 router.route("/register").post(validateRequest(register.validate), register.excecute);
 router.route("/login").post(validateRequest(login.validate), login.excecute);
 router.route("/resend-otp").post(resendOtp.excecute);
-router.route("/verify-otp").post(verifyOtp.excecute);
+// router.route("/verify-otp").post(verifyOtp.excecute);
 router.route("/google/url").get(googleUrl.excecute);
 router.route("/google/callback").get(googleCallBack.excecute);
 router.route("/").get(getList.excecute);
@@ -55,6 +55,7 @@ router.route("/delete/:id").delete(
   deleteById.excecute
 );
 
+// phần này cho user upload avatar
 router.route("/update-avatar")
   .put(
     authenticationMiddleware.verifyToken,
@@ -62,6 +63,7 @@ router.route("/update-avatar")
     updateAvatar.excecute
   );
 
+// đổi email request
 router.post(
   "/request-change-email",
   authenticationMiddleware.verifyToken,
