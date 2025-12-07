@@ -42,7 +42,11 @@ const excecute = async (req, res) => {
                 try {
                     const detailResponse = await axios.get(`https://openlibrary.org${item.key}.json`);
                     if (detailResponse.data.description) {
-                        description = typeof detailResponse.data.description === 'string' ? detailResponse.data.description : detailResponse.data.description.value;
+                        if (typeof detailResponse.data.description === 'string') {
+                            description = detailResponse.data.description;
+                        } else if (detailResponse.data.description.value) {
+                            description = detailResponse.data.description.value;   
+                        }
                     }
                 } catch (err) {
                     console.log("không lấy được description cho", item.key);
