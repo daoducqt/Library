@@ -46,24 +46,39 @@ const excecute = async (req, res) => {
       otpPurpose: "change_email",
     });
 
-    // Gửi OTP qua email mới
-    try {
-      await sendMail({
-        to: newEmail,
-        subject: "Xác nhận đổi email",
-        html: `
-          <h2>Xác nhận đổi email</h2>
-          <p>Mã OTP của bạn là: <strong>${otp}</strong></p>
-          <p>Mã này có hiệu lực trong 2 phút.</p>
-        `,
-      });
-    } catch (emailError) {
-      console.error("Failed to send OTP email:", emailError);
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
-        status: StatusCodes.INTERNAL_SERVER_ERROR,
-        message: "Lỗi gửi email OTP",
-      });
-    }
+    // Gửi OTP qua email mới — nếu thất bại thì rollback các trường OTP/pendingEmail
+try {
+  if (!process.env.EMAIL_USER) {
+    // optional: dev mode fallback -> log và mock
+    console.warn("EMAIL_USER not configured; skipping real email send (mock mode). OTP:", otp);
+  } else {
+    await sendMail({
+      to: newEmail,
+      subject: "Xác nhận đổi email",
+      html: `
+        <h2>Xác nhận đổi email</h2>
+        <p>Mã OTP của bạn là: <strong>${otp}</strong></p>
+        <p>Mã này có hiệu lực trong 2 phút.</p>
+      `,
+    });
+  }
+} catch (emailError) {
+  console.error("Failed to send OTP email:", emailError);
+
+  // rollback — xóa otp/pendingEmail đã lưu
+  try {
+    await User.findByIdAndUpdate(userId, {
+      $unset: { otpCode: "", otpExpires: "", pendingEmail: "", otpPurpose: "" }
+    });
+  } catch (rollbackErr) {
+    console.error("Failed to rollback OTP fields after sendMail error:", rollbackErr);
+  }
+
+  return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
+    status: StatusCodes.INTERNAL_SERVER_ERROR,
+    message: "Lỗi gửi email OTP. Vui lòng thử lại sau.",
+  });
+}
 
     return res.status(StatusCodes.OK).send({
       status: StatusCodes.OK,

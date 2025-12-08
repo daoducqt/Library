@@ -35,12 +35,36 @@ const excecute = async (req, res) => {
         const response = await axios.get(url);
         const works = response.data?.works || [];
 
+        const worksdetail = await Promise.all(works.map(async (item) => {
+            let description = "No description available";
+
+            if (item.key) {
+                try {
+                    const detailResponse = await axios.get(`https://openlibrary.org${item.key}.json`);
+                    if (detailResponse.data.description) {
+                        if (typeof detailResponse.data.description === 'string') {
+                            description = detailResponse.data.description;
+                        } else if (detailResponse.data.description.value) {
+                            description = detailResponse.data.description.value;   
+                        }
+                    }
+                } catch (err) {
+                    console.log("không lấy được description cho", item.key);
+                }
+            }
+
+            return {
+                ...item,
+                description,
+            };
+        }));
+
         if (works.length === 0) {
             return res.status(404).send({ message: "Không tìm thấy dữ liệu từ API" });
         }
 
         // Map dữ liệu sang định dạng Book
-        const bulkOps = works.map((item) => {
+        const bulkOps = worksdetail.map((item) => {
             const itemSubjects = [];
 
             if (Array.isArray(item.subjects)) {
