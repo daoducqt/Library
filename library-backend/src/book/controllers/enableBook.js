@@ -13,11 +13,7 @@ const excecute = async (req, res) => {
       });
     }
 
-    const updatedBook = await Book.findByIdAndUpdate(
-      id,
-      { available: true }, // enable
-      { new: true }
-    );
+    const updatedBook = await Book.findById(id);
 
     if (!updatedBook) {
       return res.status(StatusCodes.NOT_FOUND).send({
@@ -25,6 +21,10 @@ const excecute = async (req, res) => {
         message: "Không tìm thấy sách",
       });
     }
+
+    // enable book
+    updatedBook.available = true;
+    await updatedBook.save();
 
     return res.status(StatusCodes.OK).send({
       status: StatusCodes.OK,

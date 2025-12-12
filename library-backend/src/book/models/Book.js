@@ -9,6 +9,10 @@ const BookSchema = new Schema(
     description: String,
     publishedYear: Number,
     // genre: String,
+
+    totalCopies: { type: Number, default: 1, min: 0},
+    availableCopies: { type: Number, default: 1, min: 0},
+
     available: { type: Boolean, default: true },
 
     // dùng để lưu sách từ Open Library
@@ -19,8 +23,17 @@ const BookSchema = new Schema(
     views: { type: Number, default: 0 },
 
     categoryId: { type: Schema.Types.ObjectId, ref: "Category" },
+
+    openLibraryId: { type: String, index: true, unique: true, sparse: true }, // id của Open Library
+
+    editionKeys:  [{ type: String, index: true }], // lưu các edition keys 
   }, 
   { timestamps: true }
 );
+
+BookSchema.pre("save", function (next) {
+  this.available = this.availableCopies > 0;
+  next();
+});
 
 export default model("Book", BookSchema);
