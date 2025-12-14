@@ -5,6 +5,8 @@ import { routes } from './src/index.js';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import cron from 'node-cron';
+import { autoUpdateOverdue } from './src/loan/service/loan.service.js';
 dotenv.config();
 
 const app = express();
@@ -49,3 +51,6 @@ dbConfig
         console.error("DB connection error:", err);
         process.exit(1);
     });
+
+// cron
+cron.schedule("0 * * * *", autoUpdateOverdue); // mỗi giờ quét 1 lần
