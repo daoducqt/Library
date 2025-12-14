@@ -27,6 +27,8 @@ const BookSchema = new Schema(
     openLibraryId: { type: String, index: true, unique: true, sparse: true }, // id của Open Library
 
     editionKeys:  [{ type: String, index: true }], // lưu các edition keys 
+
+    image: String,
   }, 
   { timestamps: true }
 );
