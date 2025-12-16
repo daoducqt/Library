@@ -21,7 +21,8 @@ const validate = Joi.object({
         "any.required": "Năm xuất bản là bắt buộc",
     }),
     genre: Joi.string().allow("", null),
-    available: Joi.boolean(),
+    totalCopies: Joi.number().integer().min(0).required(),
+    availableCopies: Joi.number().integer().min(0).required(),
     categoryId: Joi.string().hex().length(24).required().messages({
     "string.base": "Category ID phải là chuỗi",
     "string.length": "Category ID không hợp lệ",
@@ -32,6 +33,13 @@ const validate = Joi.object({
 const excecute = async (req, res) => {
     try {
         const input = req.body;
+
+        delete input.available; // tránh người dùng tự set available
+
+        if ( input.totalCopies && !input.availableCopies ) {
+            input.availableCopies = input.totalCopies;
+        }
+
         let data = await Book.create(input);
         
         if (!data) {

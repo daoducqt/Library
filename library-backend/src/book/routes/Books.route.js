@@ -13,6 +13,8 @@ import updateBook from "../../book/controllers/updateBook.js";
 import disableBook from "../controllers/disableBook.js";
 import getByCategory from "../controllers/getByCategory.js";
 import enableBook from "../controllers/enableBook.js";
+import recommendBookAuthor from "../controllers/recommendAuthor.js";
+import recommendBookCategory from "../controllers/recommendCate.js";
 
 const router = express.Router();
 // Lấy danh sách sách, có search + phân trang
@@ -20,6 +22,11 @@ router.route("/getBookList").get(getBooks.excecute);
 
 // Import sách từ Open Library dựa trên subject
 router.route("/importBooks").get(importBookToDb.excecute);
+
+// Lấy sách gợi ý theo tác giả
+router.route("/:id/recommend/author").get(recommendBookAuthor.excecute);
+// Lấy sách gợi ý theo thể loại
+router.route("/:id/recommend/category").get(recommendBookCategory.excecute);
 
 // Lọc sách theo thể loại, năm xuất bản, trạng thái
 router.route("/Filter").get(FilterBook.excecute);

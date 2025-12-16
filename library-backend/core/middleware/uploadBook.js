@@ -1,29 +1,23 @@
-// middlewares/uploadAvatar.js
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-// Tạo thư mục lưu avatar nếu chưa tồn tại
-const dir = "uploads/avatars/";
+const dir = "uploads/books/";
 if (!fs.existsSync(dir)) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
-
-// Folder lưu avatar
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/avatars/");
+    cb(null, dir);
   },
   filename: function (req, file, cb) {
-    // Tạo tên file: timestamp + tên gốc
     const ext = path.extname(file.originalname);
     const fileName = Date.now() + ext;
     cb(null, fileName);
   },
 });
 
-// Chỉ cho phép file hình ảnh
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);
@@ -32,10 +26,10 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const uploadAvatar = multer({
+const uploadBook = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
-export default uploadAvatar;
+export default uploadBook;
