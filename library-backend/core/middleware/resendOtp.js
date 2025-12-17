@@ -29,7 +29,11 @@ const excecute = async (req, res) => {
     await user.save();
 
     // Gửi OTP qua email
-    await sendMail(user.email, `Mã OTP mới của bạn là: ${otp}`);
+    await sendMail({
+      to: user.email,
+      subject: "Mã OTP xác thực",
+      text: `Mã OTP mới của bạn là: ${otp}`,
+    });
 
     return res.status(StatusCodes.OK).send({
       status: StatusCodes.OK,

@@ -4,6 +4,7 @@ import verifyChangeEmail from "../controller/verifyChangeEmail.js";
 import { validateRequest } from "../../../core/middleware/validationRequest.js";
 import authenticationMiddleware from "../../../core/middleware/authentication.js";
 import verifyOtp from "../../../core/middleware/verifyOtp.js";
+import resendOtp from "../../../core/middleware/resendOtp.js";
 
 const router = express.Router();
 
@@ -11,6 +12,8 @@ router.route("/send-otp").post(sendOtp.excecute);
 
 // dùng cho verify otp khi login hoặc đăng ký
 router.route("/verify-otp").post(verifyOtp.excecute);
+
+router.route("/resend-otp").post(resendOtp.excecute);
 
 // dùng cho verify otp khi đổi email
 router.post(

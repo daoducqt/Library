@@ -21,7 +21,7 @@ const excecute = async (req, res) => {
     const { bookId, days } = req.body;
     const user = req.user;
     // chặn user mượn sách nếu còn nợ phạt
-    const unpaidFines = await Fine.find({
+    const unpaidFines = await Fine.exists({
       userId: user._id,
       isPaid: false,
     });
