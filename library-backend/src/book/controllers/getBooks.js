@@ -27,7 +27,15 @@ const excecute = async (req, res) => {
             .skip(skip)
             .limit(limit)
             .sort({ createdAt: -1 })
-            .populate("categoryId", "name slug");; // Sắp xếp mới nhất trước
+            .populate("categoryId", "name slug") // Sắp xếp mới nhất trước
+            .lean();
+
+        const booksWithCover = data.map((book) => ({
+            ...book,
+            coverUrl: book.coverId
+                ? `https://covers.openlibrary.org/b/id/${book.coverId}-L.jpg`
+                : null,
+        }));
 
         // Tính tổng số trang
         const totalPages = Math.ceil(total / limit);
@@ -35,7 +43,7 @@ const excecute = async (req, res) => {
         return res.status(StatusCodes.OK).send({
             status: StatusCodes.OK,
             message: ReasonPhrases.OK,
-            data: data,
+            data: booksWithCover,
             pagination: {
                 page,
                 limit,
