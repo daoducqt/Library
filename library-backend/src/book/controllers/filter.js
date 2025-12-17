@@ -4,7 +4,7 @@ import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
 
 const excecute = async (req, res) => {
   try {
-    const { keyword, genres, publishedYear, available, page = 1, limit = 20 } = req.query;
+    const { keyword, subject, category, publishedYear, available, page = 1, limit = 20 } = req.query;
 
     const query = {};
 
@@ -16,11 +16,19 @@ const excecute = async (req, res) => {
       ];
     }
 
-    // Filter thể loại (genres)
-    if (genres) {
-      // genres có thể là chuỗi 'action,romance' hoặc mảng
-      const genresArray = Array.isArray(genres) ? genres : genres.split(",").map(g => g.trim());
-      query.genre = { $in: genresArray };
+    // Filter thể loại (subject)
+     if (subject) {
+      query.subjects = {
+        $regex: new RegExp(`^${subject}$`, "i"),
+      };
+    }
+
+    // Category (theo slug)
+    if (category) {
+      const categoryDoc = await Category.findOne({ slug: category });
+      if (categoryDoc) {
+        query.categoryId = categoryDoc._id;
+      }
     }
 
     // Filter năm xuất bản (có thể đơn giản hoặc nâng cao)
@@ -47,7 +55,8 @@ const excecute = async (req, res) => {
       .skip(skip)
       .limit(limitNum)
       .sort({ createdAt: -1 })
-      .populate("categoryId", "name slug");
+      .populate("categoryId", "name slug")
+      .lean();
 
     return res.status(StatusCodes.OK).send({
       status: StatusCodes.OK,

@@ -1,0 +1,1 @@
+export const FINE_PER_DAY = 5000; // Số tiền phạt mỗi ngày trễ hạn (ví dụ: 5000 VND)

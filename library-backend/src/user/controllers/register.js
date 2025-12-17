@@ -72,7 +72,11 @@ const excecute = async (req, res) => {
     const user = await User.create(input);
 
     // Gửi otp
-    if (user.email) await sendMail(user.email, `Mã OTP của bạn là: ${otp}`);
+    if (user.email) await sendMail({
+      to: user.email,
+      subject: "Mã OTP xác thực tài khoản",
+      text: `Mã OTP của bạn là: ${otp}`,
+    });
 
     return res.status(StatusCodes.OK).send({
       status: StatusCodes.OK,

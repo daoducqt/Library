@@ -4,6 +4,8 @@ import Loan from "../model/loan.js";
 import Book from "../../book/models/Book.js";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
+import Fine from "../../fine/model/fine.js";
+
 
 const MAX_ACTIVE_BORROWS = 10;
 const MAX_BORROW_DAYS = 60;
@@ -18,6 +20,18 @@ const excecute = async (req, res) => {
   try {
     const { bookId, days } = req.body;
     const user = req.user;
+    // chặn user mượn sách nếu còn nợ phạt
+    const unpaidFines = await Fine.exists({
+      userId: user._id,
+      isPaid: false,
+    });
+
+    if (unpaidFines) {
+      return res.status(StatusCodes.BAD_REQUEST).send({
+        status: StatusCodes.BAD_REQUEST,
+        message: "Bạn còn nợ phạt, vui lòng thanh toán trước khi mượn sách",
+      });
+    }
 
     /* ===== 1️⃣ validate bookId ===== */
     if (!mongoose.Types.ObjectId.isValid(bookId)) {
