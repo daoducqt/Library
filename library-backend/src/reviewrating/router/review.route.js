@@ -1,12 +1,11 @@
 import express from "express";
 import authenticationMiddleware from "../../../core/middleware/authentication.js";
 import { validateRequest } from "../../../core/middleware/validationRequest.js";
-import { RoleTypeEnum } from "../../user/models/User.js";
 
 import createReview from "../controller/create.js";
 import updateReview from "../controller/update.js";
-import deleteReview from "../controller/delete.js";
-import getReviewsByBook from "../controller/getReviewsByBook.js";
+import deleteReview from "../controller/remove.js";
+import getReviewsByBook from "../controller/getbyBook.js";
 
 const router = express.Router();
 
