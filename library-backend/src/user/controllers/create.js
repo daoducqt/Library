@@ -10,10 +10,6 @@ const validate = Joi.object({
     "string.base": "Tên tài khoản dùng phải là chuỗi",
     "any.required": "Tên tài khoản là bắt buộc",
   }),
-  phone: Joi.string().required().trim().messages({
-    "string.base": "Số điện thoại phải là chuỗi",
-    "any.required": "Số điện thoại là bắt buộc",
-  }),
   password: Joi.string().required().trim().messages({
     "string.base": "Mật khẩu phải là chuỗi",
     "any.required": "Mật khẩu là bắt buộc",

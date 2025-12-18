@@ -3,6 +3,8 @@ import Loan from "../model/loan.js";
 import Book from "../../book/models/Book.js";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
+import Fine from "../../fine/model/fine.js";
+import { FINE_PER_DAY } from "../../fine/contants/fine.contants.js";
 
 const excecute = async (req, res) => {
     try {
@@ -34,9 +36,23 @@ const excecute = async (req, res) => {
         const isOverdue = now > loan.dueDate;
 
         loan.returnDate = now;
-        loan.status = isOverdue ? "OVERDUE" : "RETURNED";
+        loan.status = "RETURNED";
         await loan.save();
 
+        /* ===== TẠO FINE NẾU QUÁ HẠN ===== */
+        if (isOverdue) {
+            const diffTime = now.getTime() - loan.dueDate.getTime();
+            const daysLate = Math.ceil(diffTime / 864e5); // 1 ngày = 86400000 ms
+
+            await Fine.create({
+                userId: loan.userId,
+                loanId: loan._id,
+                daysLate,
+                amount: daysLate * FINE_PER_DAY,
+            });
+        }
+
+        // Trả lại sách 
         await Book.findByIdAndUpdate(loan.bookId, {
             $inc: { availableCopies: +1 }
         });

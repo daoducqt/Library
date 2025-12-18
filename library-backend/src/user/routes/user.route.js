@@ -25,7 +25,7 @@ const router = express.Router();
 // Public routes
 router.route("/register").post(validateRequest(register.validate), register.excecute);
 router.route("/login").post(validateRequest(login.validate), login.excecute);
-router.route("/resend-otp").post(resendOtp.excecute);
+// router.route("/resend-otp").post(resendOtp.excecute);
 // router.route("/verify-otp").post(verifyOtp.excecute);
 router.route("/google/url").get(googleUrl.excecute);
 router.route("/google/callback").get(googleCallBack.excecute);

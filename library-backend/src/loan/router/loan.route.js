@@ -25,7 +25,7 @@ const adminAuth = [
 // 📌 Lấy danh sách tất cả các loan trong hệ thống
 router.get("/list", adminAuth, getList.excecute);
 
-// 📌 Lấy danh sách các loan quá hạn (OVERDUE)
+// 📌 [ADMIN] Đánh dấu một loan là quá hạn (OVERDUE)
 router.patch("/:loanId/mark-overdue", adminAuth, markOverDue.excecute);
 
 // 📌 Lấy danh sách các loan quá hạn (OVERDUE)
