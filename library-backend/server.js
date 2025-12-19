@@ -7,6 +7,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cron from 'node-cron';
 import { autoUpdateOverdue } from './src/loan/service/loan.service.js';
+import { checkDueLoans } from './src/loan/service/overDueCheck.js';
+
 dotenv.config();
 
 const app = express();
@@ -54,3 +56,4 @@ dbConfig
 
 // cron
 cron.schedule("0 * * * *", autoUpdateOverdue); // mỗi giờ quét 1 lần
+checkDueLoans();

@@ -5,7 +5,7 @@ import Book from "../../book/models/Book.js";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
 import Fine from "../../fine/model/fine.js";
-
+import { notifyBorrow } from "../../notification/services/notification.service.js";
 
 const MAX_ACTIVE_BORROWS = 10;
 const MAX_BORROW_DAYS = 60;
@@ -103,6 +103,13 @@ const excecute = async (req, res) => {
     await Book.findByIdAndUpdate(bookId, {
       $inc: { availableCopies: -1 },
     });
+
+    /* ===== 6️⃣ gửi thông báo ===== */
+    try {
+      await notifyBorrow(user._id, book.title, loan._id);
+    } catch (notiErr) {
+      console.error("Error sending notification:", notiErr);
+    }
 
     return res.status(StatusCodes.OK).send({
       status: StatusCodes.OK,
