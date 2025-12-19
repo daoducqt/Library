@@ -15,6 +15,8 @@ import getByCategory from "../controllers/getByCategory.js";
 import enableBook from "../controllers/enableBook.js";
 import recommendBookAuthor from "../controllers/recommendAuthor.js";
 import recommendBookCategory from "../controllers/recommendCate.js";
+import uploadBook from "../../../core/middleware/uploadBook.js";
+import upImage from "../../book/controllers/uploadBookImage.js"
 
 const router = express.Router();
 // Lấy danh sách sách, có search + phân trang
@@ -60,13 +62,35 @@ router
     ],
     updateBook.excecute
   );
+  
+  // Upload ảnh sách (Admin/Super Admin)
+router.route("/upload-image/:id").put(
+  [
+    authenticationMiddleware.verifyToken,
+    authenticationMiddleware.verifyRole(RoleTypeEnum.ADMIN, RoleTypeEnum.SUPER_ADMIN),
+    uploadBook.single("image"),
+  ],
+  upImage.excecute
+);
 
 // Vô hiệu hóa / bật sách
-router.route("/disable/:id").patch(disableBook.excecute);
-router.route("/enable/:id").patch(enableBook.excecute); 
+router.route("/disable/:id").patch(
+  [
+    authenticationMiddleware.verifyToken,
+    authenticationMiddleware.verifyRole(RoleTypeEnum.ADMIN, RoleTypeEnum.SUPER_ADMIN),
+  ],
+  disableBook.excecute);
+router.route("/enable/:id").patch(
+  [
+    authenticationMiddleware.verifyToken,
+    authenticationMiddleware.verifyRole(RoleTypeEnum.ADMIN, RoleTypeEnum.SUPER_ADMIN),
+  ],
+enableBook.excecute); 
 
 // Lấy sách theo category
 // slug trong Map.js ở category
 router.route("/category/:slug").get(getByCategory.excecute);
+
+
 
 export default router;
