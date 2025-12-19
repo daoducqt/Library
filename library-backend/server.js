@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import dbConfig from './core/config/db.js';
 import { createServer } from "http";
 import { routes } from './src/index.js';
@@ -18,6 +19,9 @@ const server = createServer(app);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// static files
+app.use('/uploads', express.static(path.join(process.cwd(), "uploads")));
 
 // secure 
 app.set("trust proxy", "loopback"); // trust first proxy
