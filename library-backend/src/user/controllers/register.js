@@ -38,11 +38,15 @@ const excecute = async (req, res) => {
 
     // ─── CHECK DUPLICATE ───────────────────────────────
     const checkDuplicate = [
-      { userName: input.userName },
-      { email: input.email }
+      { userName: input.userName }
     ];
 
-    // Chỉ push nếu phone có giá trị thật
+    // Kiểm tra email trùng (nếu có)
+    if (input.email) {
+      checkDuplicate.push({ email: input.email });
+    }
+
+    // Kiểm tra phone trùng (nếu có)
     if (input.phone) {
       checkDuplicate.push({ phone: input.phone });
     }
@@ -50,9 +54,19 @@ const excecute = async (req, res) => {
     const existingUser = await User.findOne({ $or: checkDuplicate });
 
     if (existingUser) {
+      // Tạo message cụ thể hơn
+      let duplicateField = "";
+      if (existingUser.userName === input.userName) {
+        duplicateField = "Tên tài khoản";
+      } else if (existingUser.email === input.email) {
+        duplicateField = "Email";
+      } else if (existingUser.phone === input.phone) {
+        duplicateField = "Số điện thoại";
+      }
+
       return res.status(StatusCodes.BAD_REQUEST).send({
         status: StatusCodes.BAD_REQUEST,
-        message: "Tên người dùng, email hoặc số điện thoại đã tồn tại",
+        message: `${duplicateField} đã tồn tại`,
       });
     }
 
@@ -60,29 +74,46 @@ const excecute = async (req, res) => {
     const hashedPassword = await bcrypt.hash(input.password, 10);
     input.password = hashedPassword;
 
-    // Tạo User chưa verifu
-    input.isVerified = false;
+    // Nếu đăng ký bằng EMAIL → Cần verify OTP
+    if (input.email) {
+      input.isVerified = false;
 
-    // Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    input.otpCode = otp;
-    input.otpExpires = new Date(Date.now() + 2 * 60 * 1000);
+      // Generate OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      input.otpCode = otp;
+      input.otpExpires = new Date(Date.now() + 2 * 60 * 1000);
 
-    // ─── CREATE USER ─────────────────────────────────────
-    const user = await User.create(input);
+      // ─── CREATE USER ─────────────────────────────────────
+      const user = await User.create(input);
 
-    // Gửi otp
-    if (user.email) await sendMail({
-      to: user.email,
-      subject: "Mã OTP xác thực tài khoản",
-      text: `Mã OTP của bạn là: ${otp}`,
-    });
+      // Gửi OTP qua email
+      await sendMail({
+        to: user.email,
+        subject: "Mã OTP xác thực tài khoản",
+        text: `Mã OTP của bạn là: ${otp}. Mã có hiệu lực trong 2 phút.`,
+      });
 
-    return res.status(StatusCodes.OK).send({
-      status: StatusCodes.OK,
-      message: ReasonPhrases.OK,
-      userId: user._id,
-    });
+      return res.status(StatusCodes.OK).send({
+        status: StatusCodes.OK,
+        message: "Đăng ký thành công. Vui lòng kiểm tra email để xác thực tài khoản.",
+        userId: user._id,
+        requireVerification: true
+      });
+    } 
+    // Nếu đăng ký bằng SĐT → Không cần verify, active luôn
+    else {
+      input.isVerified = true;
+
+      // ─── CREATE USER
+      const user = await User.create(input);
+
+      return res.status(StatusCodes.OK).send({
+        status: StatusCodes.OK,
+        message: "Đăng ký thành công. Bạn có thể đăng nhập ngay.",
+        userId: user._id,
+        requireVerification: false
+      });
+    }
 
   } catch (error) {
     console.error(error);
