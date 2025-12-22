@@ -13,7 +13,7 @@ const userSchema = new Schema(
   {
     userName: { type: String, required: true, unique: true },
     email: { type: String, unique: true, sparse: true },
-    // phone: { type: String, unique: true, sparse: true },
+    phone: { type: String, unique: true, sparse: true },
     password: { type: String, required: true },
     refreshToken: { type: String, select: false },
     fullName: { type: String, required: true },

@@ -22,13 +22,22 @@ const excecute = async (req, res) => {
 
     // Find user by userName
     const user = await User.findOne({ 
-      $or: [ { userName: account }, { email: account } ]
+      $or: [ { userName: account }, { email: account }, { phone: account } ]
      });
 
     if (!user) {
       return res.status(StatusCodes.UNAUTHORIZED).send({
         status: StatusCodes.UNAUTHORIZED,
         message: "Tên người dùng hoặc mật khẩu không chính xác",
+      });
+    }
+
+    if (user.email && !user.isVerified) {
+      return res.status(StatusCodes.FORBIDDEN).send({
+        status: StatusCodes.FORBIDDEN,
+        message: "Tài khoản chưa được xác thực, vui lòng kiểm tra email để xác thực tài khoản.",
+        userId: user._id,
+        requireVerification: true,
       });
     }
 
