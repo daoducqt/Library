@@ -13,6 +13,7 @@ import loanStats from "../controller/loanStats.js";
 import markOverDue from "../controller/markOverDue.js";
 import loanActive from "../controller/loanActive.js";
 import getOverDue from "../controller/getOverDue.js";
+import top10Borrowed from "../controller/top10Borrowed.js";
 
 const router = express.Router();
 
@@ -34,6 +35,9 @@ router.get("/overdue", adminAuth, getOverDue.excecute);
 // 📌 Thống kê mượn trả sách toàn hệ thống (số lượng, tình trạng, ...)
 router.get("/stats", adminAuth, loanStats.excecute);
 
+// not authenticated user routes
+// 📌 Lấy top 10 sách được mượn nhiều nhất trong khoảng thời gian
+router.route("/top10-borrowed").get(top10Borrowed.excecute);
 // Authenticated user routes
 // 📌 Lấy lịch sử mượn trả của một user theo userId
 router.get("/history/:userId", 
@@ -73,6 +77,7 @@ router.get("/:loanId",
     authenticationMiddleware.verifyToken, 
     getLoanDetail.excecute
 );
+
 
 
 

@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import dbConfig from './core/config/db.js';
 import { createServer } from "http";
 import { routes } from './src/index.js';
@@ -7,6 +8,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cron from 'node-cron';
 import { autoUpdateOverdue } from './src/loan/service/loan.service.js';
+import { checkDueLoans } from './src/loan/service/overDueCheck.js';
+
 dotenv.config();
 
 const app = express();
@@ -16,6 +19,9 @@ const server = createServer(app);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// static files
+app.use('/uploads', express.static(path.join(process.cwd(), "uploads")));
 
 // secure 
 app.set("trust proxy", "loopback"); // trust first proxy
@@ -54,3 +60,4 @@ dbConfig
 
 // cron
 cron.schedule("0 * * * *", autoUpdateOverdue); // mỗi giờ quét 1 lần
+checkDueLoans();

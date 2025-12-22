@@ -1,3 +1,4 @@
+import { notifyReturn } from "../../notification/services/notification.service.js";
 import mongoose from "mongoose";
 import Loan from "../model/loan.js";
 import Book from "../../book/models/Book.js";
@@ -17,7 +18,7 @@ const excecute = async (req, res) => {
             });
         }
 
-        const loan = await Loan.findById(loanId);
+        const loan = await Loan.findById(loanId).populate("bookId");
         if (!loan) {
             return res.status(StatusCodes.NOT_FOUND).send({
                 status: StatusCodes.NOT_FOUND,
@@ -39,10 +40,11 @@ const excecute = async (req, res) => {
         loan.status = "RETURNED";
         await loan.save();
 
+        let daysLate = 0;
         /* ===== TẠO FINE NẾU QUÁ HẠN ===== */
         if (isOverdue) {
             const diffTime = now.getTime() - loan.dueDate.getTime();
-            const daysLate = Math.ceil(diffTime / 864e5); // 1 ngày = 86400000 ms
+            daysLate = Math.ceil(diffTime / 864e5); // 1 ngày = 86400000 ms
 
             await Fine.create({
                 userId: loan.userId,
@@ -56,6 +58,13 @@ const excecute = async (req, res) => {
         await Book.findByIdAndUpdate(loan.bookId, {
             $inc: { availableCopies: +1 }
         });
+
+        // Gửi thông báo trả sách
+        try {
+            await notifyReturn(loan.userId, loan.bookId.title, loan._id, daysLate);
+        } catch (notiErr) {
+            console.error("Error sending notification:", notiErr);
+        }
 
         return res.status(StatusCodes.OK).send({
             status: StatusCodes.OK,
