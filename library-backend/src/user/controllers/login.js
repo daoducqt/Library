@@ -32,14 +32,17 @@ const excecute = async (req, res) => {
       });
     }
 
-    if (user.email && !user.isVerified) {
-      return res.status(StatusCodes.FORBIDDEN).send({
-        status: StatusCodes.FORBIDDEN,
-        message: "Tài khoản chưa được xác thực, vui lòng kiểm tra email để xác thực tài khoản.",
-        userId: user._id,
-        requireVerification: true,
-      });
-    }
+    // ─── TẮT KIỂM TRA XÁC THỰC EMAIL ───────────────────────────────
+    // /* ─── CODE CŨ - CHECK VERIFIED ───────────────────────────────
+    // if (user.email && !user.isVerified) {
+    //   return res.status(StatusCodes.FORBIDDEN).send({
+    //     status: StatusCodes.FORBIDDEN,
+    //     message: "Tài khoản chưa được xác thực, vui lòng kiểm tra email để xác thực tài khoản.",
+    //     userId: user._id,
+    //     requireVerification: true,
+    //   });
+    // }
+    // */ ─── KẾT THÚC CODE CŨ ───────────────────────────────
 
     // Verify password
     if (!user.password) {
@@ -49,7 +52,7 @@ const excecute = async (req, res) => {
       });
     }
 
-    // ckeck status
+    // check status
     if (user.status === "BANNED") {
         return res.status(StatusCodes.FORBIDDEN).send({
           status: StatusCodes.FORBIDDEN,
