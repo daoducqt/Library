@@ -1,4 +1,4 @@
-import Fine from "../models/fine.model.js";
+import Fine from "../model/fine.js";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 
 const excecute = async (req, res) => {

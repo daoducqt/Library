@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import cron from 'node-cron';
 import { autoUpdateOverdue } from './src/loan/service/loan.service.js';
 import { checkDueLoans } from './src/loan/service/overDueCheck.js';
+import scheduleFineGenerationJob from './src/fine/services/cronjob.js';
 
 dotenv.config();
 
@@ -52,6 +53,7 @@ dbConfig
         server.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
         });
+        scheduleFineGenerationJob();
     })
     .catch((err) => {
         console.error("DB connection error:", err);

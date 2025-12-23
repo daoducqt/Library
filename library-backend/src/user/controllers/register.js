@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import { RoleTypeEnum } from "../models/User.js";
 import bcrypt from "bcrypt";
 import sendMail from "../../../core/utils/sendMail.js";
+import Registration from "../models/registration.js";
 
 const validate = Joi.object({
   fullName: Joi.string().required().trim().messages({
@@ -38,18 +39,10 @@ const excecute = async (req, res) => {
 
     // ─── CHECK DUPLICATE ───────────────────────────────
     const checkDuplicate = [
-      { userName: input.userName }
+      { userName: input.userName },
+      ...(input.email ? [{email: input.email}] : []),
+      ...(input.phone ? [{phone: input.phone}] : []),
     ];
-
-    // Kiểm tra email trùng (nếu có)
-    if (input.email) {
-      checkDuplicate.push({ email: input.email });
-    }
-
-    // Kiểm tra phone trùng (nếu có)
-    if (input.phone) {
-      checkDuplicate.push({ phone: input.phone });
-    }
 
     const existingUser = await User.findOne({ $or: checkDuplicate });
 
@@ -72,19 +65,28 @@ const excecute = async (req, res) => {
 
     // ─── HASH PASSWORD ───────────────────────────────────
     const hashedPassword = await bcrypt.hash(input.password, 10);
-    input.password = hashedPassword;
 
-    // Nếu đăng ký bằng EMAIL → Cần verify OTP
+    
+    // Nếu đăng ký bằng EMAIL → lưu tạm
     if (input.email) {
-      input.isVerified = false;
+      await Registration.deleteMany({
+        $or: [{ email: input.email }, { userName: input.userName }]
+      })
 
       // Generate OTP
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      input.otpCode = otp;
-      input.otpExpires = new Date(Date.now() + 2 * 60 * 1000);
 
-      // ─── CREATE USER ─────────────────────────────────────
-      const user = await User.create(input);
+      // luu đăng ký tạm thời
+      await Registration.create({
+        fullName: input.fullName,
+        userName: input.userName,
+        email: input.email,
+        phone: input.phone || null,
+        password: hashedPassword,
+        otpCode: otp,
+        otpExpires: new Date(Date.now() + 2 * 60 * 1000), // 2 minutes from now
+        role: RoleTypeEnum.USER,
+      });
 
       // Gửi OTP qua email
       await sendMail({
@@ -102,16 +104,22 @@ const excecute = async (req, res) => {
     } 
     // Nếu đăng ký bằng SĐT → Không cần verify, active luôn
     else {
-      input.isVerified = true;
+      const user = await User.create({
+        fullName: input.fullName,
+        userName: input.userName,
+        phone: input.phone,
+        password: hashedPassword,
+        role: RoleTypeEnum.USER,
+        isVerified: true,
+      });
 
-      // ─── CREATE USER
-      const user = await User.create(input);
-
-      return res.status(StatusCodes.OK).send({
-        status: StatusCodes.OK,
-        message: "Đăng ký thành công. Bạn có thể đăng nhập ngay.",
-        userId: user._id,
-        requireVerification: false
+      return res.status(StatusCodes.CREATED).send({
+        status: StatusCodes.CREATED,
+        message: "Đăng ký thành công.",
+        data: {
+          userId: user._id,
+          requireVerification: false
+        }
       });
     }
 
