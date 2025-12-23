@@ -6,6 +6,7 @@ import LoanRouter from "./loan/router/index.js";
 import ReviewRouter from "./reviewrating/router/index.js";
 import NotificationRouter from "./notification/router/index.js";
 import StockRouter from "./stockIn/router/index.js";
+import fineRouter from "./fine/router/index.js";
 
 const routes = (app) => {
   UserRoutes(app);
@@ -16,6 +17,7 @@ const routes = (app) => {
   ReviewRouter(app);
   NotificationRouter(app);
   StockRouter(app);
+  fineRouter(app);
 };
 
 export { routes };

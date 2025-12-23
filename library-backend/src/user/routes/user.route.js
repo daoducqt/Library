@@ -19,6 +19,7 @@ import uploadAvatar from "../../../core/middleware/uploadAvatar.js";
 import deleteById from "../controllers/delete.js"
 import logout from "../controllers/logout.js";
 import requestChangeEmail from "../controllers/changEmail.js"
+import verifyRegistration from "../controllers/verifyRegistration.js";
 
 const router = express.Router();
 
@@ -31,7 +32,7 @@ router.route("/google/url").get(googleUrl.excecute);
 router.route("/google/callback").get(googleCallBack.excecute);
 router.route("/").get(getList.excecute);
 router.route("/:id").get(getUserId.excecute);
-
+router.route("/verify-registration").post(validateRequest(verifyRegistration.validate), verifyRegistration.excecute);
 
 // Routes for logged-in users
 router.route("/update-profile/:id").put(authenticationMiddleware.verifyToken, updateProfile.excecute);
