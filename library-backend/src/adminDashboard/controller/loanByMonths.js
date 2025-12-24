@@ -3,7 +3,7 @@ import Loan from "../../loan/model/loan.js";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
 
-const execute = async (req, res) => {
+const excecute = async (req, res) => {
   try {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -63,4 +63,4 @@ const execute = async (req, res) => {
   }
 };
 
-export default { execute };
+export default { excecute };

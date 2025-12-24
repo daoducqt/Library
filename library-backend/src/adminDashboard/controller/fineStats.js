@@ -3,7 +3,7 @@ import Fine from "../../fine/model/fine.js";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
 
-const execute = async (req, res) => {
+const excecute = async (req, res) => {
   try {
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -54,4 +54,4 @@ const execute = async (req, res) => {
   }
 };
 
-export default { execute };
+export default { excecute };

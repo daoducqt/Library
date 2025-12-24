@@ -7,6 +7,8 @@ import ReviewRouter from "./reviewrating/router/index.js";
 import NotificationRouter from "./notification/router/index.js";
 import StockRouter from "./stockIn/router/index.js";
 import fineRouter from "./fine/router/index.js";
+import AdminRouter from "./adminDashboard/router/index.js";
+import LocationRouter from "./location/router/index.js";
 
 const routes = (app) => {
   UserRoutes(app);
@@ -18,6 +20,8 @@ const routes = (app) => {
   NotificationRouter(app);
   StockRouter(app);
   fineRouter(app);
+  AdminRouter(app);
+  LocationRouter(app);
 };
 
 export { routes };

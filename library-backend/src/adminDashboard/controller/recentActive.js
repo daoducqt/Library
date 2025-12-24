@@ -5,7 +5,7 @@ import User from "../../user/models/User.js";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
 
-const execute = async (req, res) => {
+const excecute = async (req, res) => {
   try {
     const { limit = 10 } = req.query;
     const limitNum = parseInt(limit);
@@ -74,4 +74,4 @@ const execute = async (req, res) => {
   }
 };
 
-export default { execute };
+export default { excecute };
