@@ -11,17 +11,17 @@ const validate = Joi.object({
 
 const excecute = async (req, res) => {
   try {
-    const { reviewId } = req.params;
+    const { id } = req.params;  
     const user = req.user;
 
-    if (!mongoose.Types.ObjectId.isValid(reviewId)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(StatusCodes.BAD_REQUEST).send({
         status: StatusCodes.BAD_REQUEST,
         message: "Review ID không hợp lệ",
       });
     }
 
-    const review = await Review.findById(reviewId);
+    const review = await Review.findById(id);  
     if (!review) {
       return res.status(StatusCodes.NOT_FOUND).send({
         status: StatusCodes.NOT_FOUND,
@@ -29,7 +29,7 @@ const excecute = async (req, res) => {
       });
     }
 
-    if (review.userId.toString() !== user._id) {
+    if (review.userId.toString() !== user._id.toString()) { 
       return res.status(StatusCodes.FORBIDDEN).send({
         status: StatusCodes.FORBIDDEN,
         message: "Không có quyền sửa review này",
@@ -51,9 +51,11 @@ const excecute = async (req, res) => {
       },
     ]);
 
-    await Book.findByIdAndUpdate(review.bookId, {
-      avgRating: stats[0].avgRating,
-    });
+    if (stats.length > 0) { 
+      await Book.findByIdAndUpdate(review.bookId, {
+        avgRating: stats[0].avgRating,
+      });
+    }
 
     return res.status(StatusCodes.OK).send({
       status: StatusCodes.OK,
@@ -63,6 +65,10 @@ const excecute = async (req, res) => {
 
   } catch (err) {
     console.error("Update review error:", err);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
+      status: StatusCodes.INTERNAL_SERVER_ERROR,
+      message: "Lỗi server",
+    });
   }
 };
 

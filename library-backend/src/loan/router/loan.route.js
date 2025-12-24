@@ -40,7 +40,7 @@ router.get("/stats", adminAuth, loanStats.excecute);
 router.route("/top10-borrowed").get(top10Borrowed.excecute);
 // Authenticated user routes
 // 📌 Lấy lịch sử mượn trả của một user theo userId
-router.get("/history/:userId", 
+router.get("/history", 
     authenticationMiddleware.verifyToken, 
     loanHistory.excecute
 );
