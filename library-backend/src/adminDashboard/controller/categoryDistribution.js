@@ -2,7 +2,7 @@ import Book from "../../book/models/Book.js";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
 
-const execute = async (req, res) => {
+const excecute = async (req, res) => {
   try {
     const categoriesWithCount = await Book.aggregate([
       {
@@ -63,4 +63,4 @@ const execute = async (req, res) => {
   }
 };
 
-export default { execute };
+export default { excecute };

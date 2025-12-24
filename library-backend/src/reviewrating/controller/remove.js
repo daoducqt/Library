@@ -5,17 +5,17 @@ import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 
 const excecute = async (req, res) => {
   try {
-    const { reviewId } = req.params;
+    const { id } = req.params;
     const user = req.user;
 
-    if (!mongoose.Types.ObjectId.isValid(reviewId)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(StatusCodes.BAD_REQUEST).send({
         status: StatusCodes.BAD_REQUEST,
         message: "Review ID không hợp lệ",
       });
     }
 
-    const review = await Review.findById(reviewId);
+    const review = await Review.findById(id);
     if (!review) {
       return res.status(StatusCodes.NOT_FOUND).send({
         status: StatusCodes.NOT_FOUND,
