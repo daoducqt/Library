@@ -29,6 +29,10 @@ const BookSchema = new Schema(
     editionKeys:  [{ type: String, index: true }], // lưu các edition keys 
 
     image: String,
+
+    // đọc online
+    lendingIdentifier : { type: String, index: true, sparse: true }, // lending identifier để đọc online từ Open Library
+    isbn: [ String ],
   }, 
   { timestamps: true }
 );
