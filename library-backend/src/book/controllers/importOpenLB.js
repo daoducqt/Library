@@ -151,6 +151,8 @@ const excecute = async (req, res) => {
           totalCopies,
           availableCopies,
           available,
+          lendingIdentifier:  Array.isArray(item.ia) ? item.ia[0] : (item.ia || null), 
+          isbn: item.isbn || [], 
         };
 
         return {
