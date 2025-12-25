@@ -81,6 +81,13 @@ const excecute = async (req, res) => {
     await User.findByIdAndUpdate(user._id, { refreshToken }, { new: true });
 
     // Optional: set refreshToken in httpOnly cookie
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 30 * 60 * 1000, 
+    });
+
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -93,7 +100,7 @@ const excecute = async (req, res) => {
       message: ReasonPhrases.OK || "Đăng nhập thành công",
       data: {
         user: userData,
-        accessToken,
+        // accessToken,
         // refreshToken optional — nếu lưu cookie thì không cần gửi body
       },
     });

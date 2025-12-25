@@ -7,24 +7,24 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const verifyToken = (req, res, next) => {
-  const token = req.headers["authorization"];
-  if (token) {
-    const accessToken = token.split(" ")[1];
-    jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET, (err, user) => {
-      if (err) {
-        return res.status(StatusCodes.FORBIDDEN).send({
-          status: StatusCodes.FORBIDDEN,
-          message: ReasonPhrases.FORBIDDEN,
-        });
-      }
-      req.user = user;
-      next();
-    });
-  } else {
-    return res.status(StatusCodes.UNAUTHORIZED).send({
-      status: StatusCodes.UNAUTHORIZED,
-      message: ReasonPhrases.UNAUTHORIZED,
-    });
+  let token = null;
+
+  if (req.cookies?.accessToken) {
+    token = req.cookies.accessToken;
+  } else if (req.headers.authorization?.startsWith("Bearer ")) {
+    token = req.headers.authorization.split(" ")[1];
+  }
+
+  if (!token) {
+    return res.status(401).json({ message: "Chưa đăng nhập" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(403).json({ message: "Token không hợp lệ" });
   }
 };
 
