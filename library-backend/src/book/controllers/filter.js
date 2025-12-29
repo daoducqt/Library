@@ -64,6 +64,7 @@ const excecute = async (req, res) => {
       coverUrl: book.coverId
         ? `https://covers.openlibrary.org/b/id/${book.coverId}-L.jpg`
         : null,
+      likeCount: book.likes ? book.likes.length : 0,
     }));
 
     return res.status(StatusCodes.OK).send({
