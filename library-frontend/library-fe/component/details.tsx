@@ -1,5 +1,8 @@
 "use client";
+import { getDetails } from "@/service/books/getDetail";
+import { borrowBooks } from "@/service/books/borrowBooks";
 import React, { useEffect, useState } from "react";
+import { AxiosError } from "axios";
 
 interface Author {
   key: string;
@@ -7,6 +10,7 @@ interface Author {
 }
 
 interface BookDetails {
+  coverUrl: string;
   title: string;
   authors: Author[];
   first_publish_year: number;
@@ -18,6 +22,7 @@ interface BookDetails {
   description: string;
   language: string[];
   type: "borrow" | "online";
+  availableCopies: number;
 }
 
 interface Comment {
@@ -34,36 +39,21 @@ interface RecommendBook {
   cover_id: number;
   rating: number;
 }
+
 interface BookDetailsProps {
   slug: string;
 }
-const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
+
+const BookDetailsPage: React.FC<BookDetailsProps> = ({ slug }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const [books, setBooks] = useState<BookDetails | undefined>(undefined);
+  const [showBorrowModal, setShowBorrowModal] = useState(false);
+  const [borrowDays, setBorrowDays] = useState(7);
+  const [isBorrowing, setIsBorrowing] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
-
-  const book: BookDetails = {
-    title: "Alice's Adventures in Wonderland",
-    authors: [{ key: "/authors/OL22098A", name: "Lewis Carroll" }],
-    first_publish_year: 1865,
-    number_of_pages_median: 96,
-    subjects: [
-      "Fiction",
-      "Fantasy",
-      "Children's literature",
-      "Adventure stories",
-      "Classic literature",
-    ],
-    publishers: ["Dover Publications", "Penguin Classics"],
-    isbn: ["9780486275437", "9780141439761"],
-    cover_id: 10527963,
-    description:
-      "Alice's Adventures in Wonderland is an 1865 novel by English author Lewis Carroll. It tells of a young girl named Alice, who falls through a rabbit hole into a subterranean fantasy world populated by peculiar, anthropomorphic creatures. The tale plays with logic, giving the story lasting popularity with adults as well as with children.",
-    language: ["eng"],
-    type: "online",
-  };
 
   const comments: Comment[] = [
     {
@@ -118,6 +108,63 @@ const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
     },
   ];
 
+  useEffect(() => {
+    if (!slug) return;
+
+    getDetails(slug).then((res) => {
+      setBooks(res);
+    });
+  }, [slug]);
+
+  console.log(books, "book details");
+
+  const handleBorrowClick = () => {
+    setShowBorrowModal(true);
+  };
+
+  const handleBorrowConfirm = async () => {
+    if (!slug || !books) return;
+
+    setIsBorrowing(true);
+    try {
+      const response = await borrowBooks(slug, borrowDays);
+
+      if (response?.data) {
+        alert(`Mượn sách thành công! Thời gian: ${borrowDays} ngày`);
+        setShowBorrowModal(false);
+      }
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+
+      alert(err.response?.data?.message || "Có lỗi xảy ra khi mượn sách");
+      console.error("Borrow error:", err);
+    } finally {
+      setIsBorrowing(false);
+    }
+  };
+
+  const handleBorrowCancel = () => {
+    setShowBorrowModal(false);
+    setBorrowDays(7);
+  };
+
+  if (!books) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "100vh",
+          color: "#ffd700",
+          fontSize: "1.5rem",
+        }}
+      >
+        ⏳ Đang tải...
+      </div>
+    );
+  }
+console.log(books, "book details render");
   return (
     <>
       {/* Fantasy Background */}
@@ -184,8 +231,8 @@ const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
             }}
           >
             <img
-              src={`https://covers.openlibrary.org/b/id/${book.cover_id}-L.jpg`}
-              alt={book.title}
+              src={books.coverUrl}
+              alt={books.title}
               style={{
                 width: "100%",
                 borderRadius: "15px",
@@ -207,7 +254,7 @@ const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
                 letterSpacing: "2px",
               }}
             >
-              {book.title}
+              {books.title}
             </h1>
 
             <div
@@ -221,7 +268,7 @@ const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
                 fontStyle: "italic",
               }}
             >
-              ✨ by {book.authors.map((author) => author.name).join(", ")}
+              {/* ✨ by {books.authors.map((author) => author.name).join(", ")} */}
             </div>
 
             {/* Action Button */}
@@ -235,14 +282,17 @@ const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
             >
               <button
                 className="magic-button"
+                onClick={
+                  books.availableCopies > 0  ? handleBorrowClick : undefined
+                }
                 style={{
                   padding: "15px 50px",
                   backgroundColor:
-                    book.type === "online" ? "#1e88e5" : "#8a2be2",
+                    books.type === "online" ? "#1e88e5" : "#8a2be2",
                   color: "white",
                   border:
                     "2px solid " +
-                    (book.type === "online" ? "#42a5f5" : "#9d4edd"),
+                    (books.type === "online" ? "#42a5f5" : "#9d4edd"),
                   borderRadius: "30px",
                   cursor: "pointer",
                   fontSize: "1.1rem",
@@ -250,7 +300,7 @@ const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
                   letterSpacing: "1px",
                 }}
               >
-                {book.type === "online" ? "📖 Đọc Online" : "📚 Thuê Sách"}
+                {books.type === "online" ? "📖 Đọc Online" : "📚 Thuê Sách"}
               </button>
             </div>
 
@@ -273,7 +323,7 @@ const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
                 🏷️ Thể Loại
               </h3>
               <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                {book.subjects.map((subject, index) => (
+                {books.subjects.map((subject, index) => (
                   <span
                     key={index}
                     className="tag fade-in-up"
@@ -347,7 +397,7 @@ const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
                   textAlign: "justify",
                 }}
               >
-                {book.description}
+                {books.description}
               </p>
             </div>
 
@@ -381,7 +431,7 @@ const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
                 >
                   ✍️ Thông Tin Tác Giả
                 </h3>
-                {book.authors.map((author, index) => (
+                {/* {books.authors.map((author, index) => (
                   <div key={index}>
                     <p
                       style={{
@@ -404,7 +454,7 @@ const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
                       </ul>
                     </div>
                   </div>
-                ))}
+                ))} */}
               </div>
 
               {/* Book Statistics */}
@@ -432,13 +482,13 @@ const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
                   <div className="stat-item">
                     <span style={{ color: "#b8a6d9" }}>📅 Năm xuất bản:</span>
                     <span style={{ fontWeight: "bold", color: "#e6d5ff" }}>
-                      {book.first_publish_year}
+                      {books.first_publish_year}
                     </span>
                   </div>
                   <div className="stat-item">
                     <span style={{ color: "#b8a6d9" }}>📖 Số trang:</span>
                     <span style={{ fontWeight: "bold", color: "#e6d5ff" }}>
-                      {book.number_of_pages_median}
+                      {books.number_of_pages_median}
                     </span>
                   </div>
                   <div className="stat-item">
@@ -456,7 +506,7 @@ const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
                         fontSize: "0.9rem",
                       }}
                     >
-                      {book.isbn[0]}
+                      {/* {books.isbn[0]} */}
                     </span>
                   </div>
                   <div className="stat-item">
@@ -498,11 +548,11 @@ const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
                   marginBottom: "20px",
                 }}
               >
-                {book.publishers.map((publisher, index) => (
+                {/* {books.publishers.map((publisher, index) => (
                   <span key={index} className="info-badge">
                     📚 {publisher}
                   </span>
-                ))}
+                ))} */}
               </div>
               <div
                 style={{
@@ -693,6 +743,193 @@ const BookDetailsPage: React.FC< BookDetailsProps> = ({ slug }) => {
           </div>
         </div>
       </div>
+
+      {/* Borrow Modal */}
+      {showBorrowModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+          onClick={handleBorrowCancel}
+        >
+          <div
+            className="magic-card"
+            style={{
+              width: "90%",
+              maxWidth: "500px",
+              padding: "40px",
+              position: "relative",
+              animation: "fadeIn 0.3s ease-in-out",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              style={{
+                fontSize: "2rem",
+                color: "#ffd700",
+                marginBottom: "30px",
+                textAlign: "center",
+              }}
+            >
+              📚 Mượn Sách
+            </h2>
+
+            <div style={{ marginBottom: "30px" }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "1.2rem",
+                  color: "#e6d5ff",
+                  marginBottom: "15px",
+                }}
+              >
+                📅 Chọn số ngày mượn:
+              </label>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                  marginBottom: "20px",
+                  flexWrap: "wrap",
+                }}
+              >
+                {[7, 14, 21, 30].map((days) => (
+                  <button
+                    key={days}
+                    onClick={() => setBorrowDays(days)}
+                    style={{
+                      padding: "12px 24px",
+                      backgroundColor:
+                        borrowDays === days
+                          ? "#8a2be2"
+                          : "rgba(138, 43, 226, 0.2)",
+                      color: borrowDays === days ? "white" : "#e6d5ff",
+                      border:
+                        borrowDays === days
+                          ? "2px solid #9d4edd"
+                          : "2px solid rgba(138, 43, 226, 0.3)",
+                      borderRadius: "25px",
+                      cursor: "pointer",
+                      fontSize: "1rem",
+                      fontWeight: borrowDays === days ? "bold" : "normal",
+                      transition: "all 0.3s ease",
+                    }}
+                  >
+                    {days} ngày
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ marginTop: "20px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "1rem",
+                    color: "#b8a6d9",
+                    marginBottom: "10px",
+                  }}
+                >
+                  Hoặc nhập số ngày tùy chỉnh:
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="90"
+                  value={borrowDays}
+                  onChange={(e) =>
+                    setBorrowDays(
+                      Math.max(1, Math.min(90, parseInt(e.target.value) || 1))
+                    )
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                    border: "2px solid rgba(138, 43, 226, 0.3)",
+                    borderRadius: "10px",
+                    color: "#e6d5ff",
+                    fontSize: "1.1rem",
+                  }}
+                />
+              </div>
+            </div>
+
+            <div
+              style={{
+                padding: "20px",
+                backgroundColor: "rgba(138, 43, 226, 0.1)",
+                borderRadius: "10px",
+                marginBottom: "30px",
+                borderLeft: "4px solid #ffd700",
+              }}
+            >
+              <p
+                style={{
+                  color: "#d4c5f9",
+                  fontSize: "1rem",
+                  lineHeight: "1.6",
+                }}
+              >
+                ℹ️ <strong>Lưu ý:</strong> Bạn sẽ mượn sách trong {borrowDays}{" "}
+                ngày. Vui lòng trả sách đúng hạn để tránh phí phạt.
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "15px",
+                justifyContent: "center",
+              }}
+            >
+              <button
+                onClick={handleBorrowCancel}
+                disabled={isBorrowing}
+                style={{
+                  padding: "15px 40px",
+                  backgroundColor: "transparent",
+                  color: "#e6d5ff",
+                  border: "2px solid rgba(138, 43, 226, 0.5)",
+                  borderRadius: "30px",
+                  cursor: isBorrowing ? "not-allowed" : "pointer",
+                  fontSize: "1.1rem",
+                  fontWeight: "bold",
+                  opacity: isBorrowing ? 0.5 : 1,
+                }}
+              >
+                ❌ Hủy
+              </button>
+              <button
+                onClick={handleBorrowConfirm}
+                disabled={isBorrowing}
+                className="magic-button"
+                style={{
+                  padding: "15px 40px",
+                  backgroundColor: "#8a2be2",
+                  color: "white",
+                  border: "2px solid #9d4edd",
+                  borderRadius: "30px",
+                  cursor: isBorrowing ? "not-allowed" : "pointer",
+                  fontSize: "1.1rem",
+                  fontWeight: "bold",
+                  opacity: isBorrowing ? 0.5 : 1,
+                }}
+              >
+                {isBorrowing ? "⏳ Đang xử lý..." : "✅ Xác Nhận"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

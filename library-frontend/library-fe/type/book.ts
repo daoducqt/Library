@@ -22,6 +22,8 @@ export interface Availability {
 }
 
 export interface Books {
+  _id: string;
+  coverUrl : string;
   key: string;
   title: string;
   edition_count: number;
@@ -40,6 +42,38 @@ export interface Books {
   subject?: string[];
 }
 
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+export interface GetBooksResponse {
+  status: number;
+  message: string;
+  data: Books[];
+  pagination: PaginationInfo;
+}
+
+export interface BookDetails {
+  availableCopies: number;
+  coverUrl: string;
+  title: string;
+  authors: Author[];
+  first_publish_year: number;
+  number_of_pages_median: number;
+  subjects: string[];
+  publishers: string[];
+  isbn: string[];
+  cover_id: number;
+  description: string;
+  language: string[];
+  type: "borrow" | "online";
+}
+
 export interface Pagination {
   page: number;
   limit: number;
@@ -53,4 +87,29 @@ export interface ApiResponse {
   message?: string;
   data: Books[];
   pagination?: Pagination;
+}
+
+export interface ApiResponseDetail {
+  status: number;
+  message?: string;
+  data: BookDetails;
+  pagination?: Pagination;
+}
+
+export interface BorrowRecord {
+  _id: string;
+  userId: string;
+  bookId: string;
+  status: "BORROWED" | "RETURNED" | "OVERDUE";
+  borrowDate: string;
+  dueDate: string;
+  extendCount: number;
+  extendHistory: [];
+  createdAt: string;
+  updatedAt: string;
+}
+export interface ApiResponseLoan {
+  status: number;
+  message?: string;
+  data: BorrowRecord;
 }

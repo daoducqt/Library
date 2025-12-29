@@ -24,16 +24,16 @@ export abstract class RepositoryBase {
     });
 
     // interceptor thêm token từ localStorage
-    this.axios.interceptors.request.use((config) => {
-      if (typeof window !== "undefined") {
-        const token = localStorage.getItem("accessToken")?.replace(/"/g, "");
-        if (token && config.url !== "/user/login") {
-          config.headers = config.headers ?? {};
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-      }
-      return config;
-    });
+    // this.axios.interceptors.request.use((config) => {
+    //   if (typeof window !== "undefined") {
+    //     const token = localStorage.getItem("accessToken")?.replace(/"/g, "");
+    //     if (token && config.url !== "/user/login") {
+    //       config.headers = config.headers ?? {};
+    //       config.headers.Authorization = `Bearer ${token}`;
+    //     }
+    //   }
+    //   return config;
+    // });
   }
 
   // --- CRUD cơ bản ---
@@ -48,7 +48,7 @@ export abstract class RepositoryBase {
       return res.data;
     } catch (err: unknown) {
       await this.handleError(err);
-      return null;
+      throw err; 
     }
   }
 
@@ -63,7 +63,7 @@ export abstract class RepositoryBase {
       return res.data;
     } catch (err: unknown) {
       await this.handleError(err);
-      return null;
+      throw err; 
     }
   }
 
@@ -78,7 +78,7 @@ export abstract class RepositoryBase {
       return res.data;
     } catch (err: unknown) {
       await this.handleError(err);
-      return null;
+      throw err; 
     }
   }
 
@@ -94,7 +94,7 @@ export abstract class RepositoryBase {
       return res.data;
     } catch (err: unknown) {
       await this.handleError(err);
-      return null;
+      throw err; 
     }
   }
 
@@ -120,7 +120,7 @@ export abstract class RepositoryBase {
       case 400:
         NotificationExtension.Fails(message || "Yêu cầu không hợp lệ!");
         break;
-     case 401:
+    //  case 401:
   NotificationExtension.Fails("Phiên đăng nhập thất bại hoặc token hết hạn!");
 
   if (typeof window !== "undefined") {

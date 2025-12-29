@@ -3,20 +3,42 @@ import { useEffect, useState } from "react";
 import Header from "@/component/header";
 import Slider from "@/component/slider";
 import MainContent from "@/component/content";
-import { Books } from "@/type/book";
+import { Books, GetBooksResponse } from "@/type/book";
 import { getListBooks } from "@/service/books/getListBooks";
 
 export default function HomePage() {
   const [books, setBooks] = useState<Books[]>([]);
-  const [books2, setBooks2] = useState<Books[] | null>(null);
+  const [books2, setBooks2] = useState<GetBooksResponse | null>(null);
   const [images, setImages] = useState<string[]>([]);
+  
+  // ✨ THÊM STATE PHÂN TRANG
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // ✨ SỬA HÀM FETCH
+  const fetchBooks = async (page: number) => {
+    setIsLoading(true);
+    try {
+      const data = await getListBooks({ page, limit });
+      setBooks2(data ?? null);
+    } catch (error) {
+      console.error("Error fetching books:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    getListBooks().then((data) => {
-      setBooks2(data ?? null); // nếu undefined → gán null
-    });
-  }, []);
-  console.log(books2, "books2");
+    fetchBooks(currentPage);
+  }, [currentPage, limit]);
+
+  // ✨ HÀM XỬ LÝ CHUYỂN TRANG
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const getAllFantasy = async () => {
     const all = [];
     const totalPages = 3;
@@ -40,12 +62,16 @@ export default function HomePage() {
   useEffect(() => {
     getAllFantasy();
   }, []);
-  console.log(books, "books");
+
   return (
     <>
-      {/* <Header /> */}
       <Slider images={images} autoplay interval={4000} />
-      <MainContent books={books2} />
+      <MainContent 
+        books={books2} 
+        currentPage={currentPage}
+        onPageChange={handlePageChange}
+        isLoading={isLoading}
+      />
     </>
   );
 }
