@@ -4,7 +4,8 @@ import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
 import User from "../models/User.js";
 import { RoleTypeEnum } from "../models/User.js";
 import bcrypt from "bcrypt";
-import sendMail from "../../../core/utils/sendMail.js";
+// import sendMail from "../../../core/utils/sendMail.js";
+// import Registration from "../models/registration.js";
 
 const validate = Joi.object({
   fullName: Joi.string().required().trim().messages({
@@ -34,27 +35,17 @@ const validate = Joi.object({
 const excecute = async (req, res) => {  
   try {
     const input = req.body;
-    input.role = RoleTypeEnum.USER;
 
     // ─── CHECK DUPLICATE ───────────────────────────────
     const checkDuplicate = [
-      { userName: input.userName }
+      { userName: input.userName },
+      ...(input.email ? [{email: input.email}] : []),
+      ...(input.phone ? [{phone: input.phone}] : []),
     ];
-
-    // Kiểm tra email trùng (nếu có)
-    if (input.email) {
-      checkDuplicate.push({ email: input.email });
-    }
-
-    // Kiểm tra phone trùng (nếu có)
-    if (input.phone) {
-      checkDuplicate.push({ phone: input.phone });
-    }
 
     const existingUser = await User.findOne({ $or: checkDuplicate });
 
     if (existingUser) {
-      // Tạo message cụ thể hơn
       let duplicateField = "";
       if (existingUser.userName === input.userName) {
         duplicateField = "Tên tài khoản";
@@ -72,48 +63,61 @@ const excecute = async (req, res) => {
 
     // ─── HASH PASSWORD ───────────────────────────────────
     const hashedPassword = await bcrypt.hash(input.password, 10);
-    input.password = hashedPassword;
 
-    // Nếu đăng ký bằng EMAIL → Cần verify OTP
-    if (input.email) {
-      input.isVerified = false;
+    // ─── TẮT TÍNH NĂNG XÁC THỰC OTP - TẠO USER TRỰC TIẾP ───────────────────────────────
+    // /* ─── CODE CŨ - GỬI OTP ───────────────────────────────
+    // if (input.email) {
+    //   await Registration.deleteMany({
+    //     $or: [{ email: input.email }, { userName: input.userName }]
+    //   });
 
-      // Generate OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      input.otpCode = otp;
-      input.otpExpires = new Date(Date.now() + 2 * 60 * 1000);
+    //   const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-      // ─── CREATE USER ─────────────────────────────────────
-      const user = await User.create(input);
+    //   await Registration.create({
+    //     fullName: input.fullName,
+    //     userName: input.userName,
+    //     email: input.email,
+    //     phone: input.phone || null,
+    //     password: hashedPassword,
+    //     role: RoleTypeEnum.USER,
+    //     otpCode: otp,
+    //     otpExpires: new Date(Date.now() + 5 * 60 * 1000),
+    //   });
 
-      // Gửi OTP qua email
-      await sendMail({
-        to: user.email,
-        subject: "Mã OTP xác thực tài khoản",
-        text: `Mã OTP của bạn là: ${otp}. Mã có hiệu lực trong 2 phút.`,
-      });
+    //   await sendMail({
+    //     to: input.email,
+    //     subject: "Mã OTP xác thực tài khoản",
+    //     text: `Mã OTP của bạn là: ${otp}. Mã có hiệu lực trong 5 phút.`,
+    //   });
 
-      return res.status(StatusCodes.OK).send({
-        status: StatusCodes.OK,
-        message: "Đăng ký thành công. Vui lòng kiểm tra email để xác thực tài khoản.",
-        userId: user._id,
-        requireVerification: true
-      });
-    } 
-    // Nếu đăng ký bằng SĐT → Không cần verify, active luôn
-    else {
-      input.isVerified = true;
+    //   return res.status(StatusCodes.OK).send({
+    //     status: StatusCodes.OK,
+    //     message: "Vui lòng kiểm tra email để nhận mã OTP.",
+    //     email: input.email,
+    //     requireVerification: true
+    //   });
+    // }
+    // */ ─── KẾT THÚC CODE CŨ ───────────────────────────────
 
-      // ─── CREATE USER
-      const user = await User.create(input);
+    // ─── TẠO USER TRỰC TIẾP - KHÔNG CẦN XÁC THỰC ───────────────────────────────
+    const user = await User.create({
+      fullName: input.fullName,
+      userName: input.userName,
+      email: input.email || null,
+      phone: input.phone || null,
+      password: hashedPassword,
+      role: RoleTypeEnum.USER,
+      isVerified: true, // ← Tự động verify
+    });
 
-      return res.status(StatusCodes.OK).send({
-        status: StatusCodes.OK,
-        message: "Đăng ký thành công. Bạn có thể đăng nhập ngay.",
+    return res.status(StatusCodes.CREATED).send({
+      status: StatusCodes.CREATED,
+      message: "Đăng ký thành công. Bạn có thể đăng nhập ngay.",
+      data: {
         userId: user._id,
         requireVerification: false
-      });
-    }
+      }
+    });
 
   } catch (error) {
     console.error(error);

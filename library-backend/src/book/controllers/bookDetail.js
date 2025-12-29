@@ -15,28 +15,44 @@ const excecute = async (req, res) => {
             });
         }
 
-        const data = await Book.findById(id).populate("categoryId", "name slug");
-        const coverUrl = data.coverId?`https://covers.openlibrary.org/b/id/${data.coverId}-L.jpg`:null;
+        const book = await Book.findById(id).populate("categoryId", "name slug viName");
 
-        if (!data) {
+        if (!book) {
             return res.status(StatusCodes.NOT_FOUND).send({
                 status: StatusCodes.NOT_FOUND,
                 message: "Không tìm thấy sách",
             });
         }
 
+        const bookData = book.toObject();
+        
+        // Thêm coverUrl
+        bookData.coverUrl = book.coverId 
+            ? `https://covers.openlibrary.org/b/id/${book.coverId}-L.jpg` 
+            : null;
+        
+        // Thêm link đọc online
+        if (book.lendingIdentifier) {
+            bookData.readOnlineUrl = `https://archive.org/details/${book.lendingIdentifier}`;
+            bookData.canReadOnline = true;
+        } else {
+            bookData.readOnlineUrl = null;
+            bookData.canReadOnline = false;
+        }
+
         return res.status(StatusCodes.OK).send({
             status: StatusCodes.OK,
             message: ReasonPhrases.OK,
-            data: {...data.toObject(), coverUrl},
+            data: bookData,
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Book detail error:", error);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
             status: StatusCodes.INTERNAL_SERVER_ERROR,
             message: ReasonPhrases.INTERNAL_SERVER_ERROR,
         });
     }
 };
+
 export default { excecute };

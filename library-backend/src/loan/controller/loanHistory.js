@@ -1,37 +1,32 @@
+// loanHistory.js
 import Loan from "../model/loan.js";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
 
-const ALLOWED_STATUS = ["RETURNED", "OVERDUE", "CANCELLED"];
+const HISTORY_STATUS = ["RETURNED", "OVERDUE", "CANCELLED"];
 
 const excecute = async (req, res) => {
   try {
     const user = req.user;
-    let { status, limit = 10, page = 1 } = req.query;
+    const { status, limit = 10, page = 1 } = req.query;
 
     // Parse pagination
-    const parsedLimit = Math.max(1, parseInt(limit));
+    const parsedLimit = Math.max(1, Math.min(100, parseInt(limit)));
     const parsedPage = Math.max(1, parseInt(page));
     const skip = (parsedPage - 1) * parsedLimit;
 
-    // mặc định là toàn bộ lịch sử
-    let statusFilter = ALLOWED_STATUS;
+    // Xây dựng filter
+    let statusFilter = HISTORY_STATUS;
 
-    // nếu client truyền status
+    // Nếu client truyền status cụ thể
     if (status) {
-      const inputStatus = Array.isArray(status)
-        ? status
-        : status.split(",");
+      const inputStatus = Array.isArray(status) ? status : status.split(",");
+      statusFilter = inputStatus.filter(s => HISTORY_STATUS.includes(s.toUpperCase()));
 
-      // chỉ nhận status hợp lệ
-      statusFilter = inputStatus.filter(s =>
-        ALLOWED_STATUS.includes(s)
-      );
-
-      if (!statusFilter.length) {
+      if (statusFilter.length === 0) {
         return res.status(StatusCodes.BAD_REQUEST).json({
           status: StatusCodes.BAD_REQUEST,
-          message: "Status không hợp lệ",
+          message: "Status không hợp lệ. Chỉ chấp nhận: RETURNED, OVERDUE, CANCELLED",
         });
       }
     }
@@ -41,17 +36,15 @@ const excecute = async (req, res) => {
       status: { $in: statusFilter },
     };
 
-    // ✅ Thêm phân trang
+    // Query với pagination
     const [total, loans] = await Promise.all([
       Loan.countDocuments(filter),
       Loan.find(filter)
+        .populate("bookId", "title author coverId isbn")
         .sort({ returnDate: -1, borrowDate: -1 })
-        .populate("bookId", "title author coverId")
         .skip(skip)
         .limit(parsedLimit),
     ]);
-
-    const hasNextPage = parsedPage * parsedLimit < total;
 
     return res.status(StatusCodes.OK).json({
       status: StatusCodes.OK,
@@ -61,10 +54,11 @@ const excecute = async (req, res) => {
         total,
         page: parsedPage,
         limit: parsedLimit,
-        hasNextPage,
         totalPages: Math.ceil(total / parsedLimit),
+        hasNextPage: parsedPage * parsedLimit < total,
       },
     });
+
   } catch (error) {
     console.error("Loan history error:", error);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({

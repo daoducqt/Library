@@ -32,14 +32,17 @@ const excecute = async (req, res) => {
       });
     }
 
-    if (user.email && !user.isVerified) {
-      return res.status(StatusCodes.FORBIDDEN).send({
-        status: StatusCodes.FORBIDDEN,
-        message: "Tài khoản chưa được xác thực, vui lòng kiểm tra email để xác thực tài khoản.",
-        userId: user._id,
-        requireVerification: true,
-      });
-    }
+    // ─── TẮT KIỂM TRA XÁC THỰC EMAIL ───────────────────────────────
+    // /* ─── CODE CŨ - CHECK VERIFIED ───────────────────────────────
+    // if (user.email && !user.isVerified) {
+    //   return res.status(StatusCodes.FORBIDDEN).send({
+    //     status: StatusCodes.FORBIDDEN,
+    //     message: "Tài khoản chưa được xác thực, vui lòng kiểm tra email để xác thực tài khoản.",
+    //     userId: user._id,
+    //     requireVerification: true,
+    //   });
+    // }
+    // */ ─── KẾT THÚC CODE CŨ ───────────────────────────────
 
     // Verify password
     if (!user.password) {
@@ -49,7 +52,7 @@ const excecute = async (req, res) => {
       });
     }
 
-    // ckeck status
+    // check status
     if (user.status === "BANNED") {
         return res.status(StatusCodes.FORBIDDEN).send({
           status: StatusCodes.FORBIDDEN,
@@ -78,6 +81,13 @@ const excecute = async (req, res) => {
     await User.findByIdAndUpdate(user._id, { refreshToken }, { new: true });
 
     // Optional: set refreshToken in httpOnly cookie
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 30 * 60 * 1000, 
+    });
+
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -90,7 +100,7 @@ const excecute = async (req, res) => {
       message: ReasonPhrases.OK || "Đăng nhập thành công",
       data: {
         user: userData,
-        accessToken,
+        // accessToken,
         // refreshToken optional — nếu lưu cookie thì không cần gửi body
       },
     });
