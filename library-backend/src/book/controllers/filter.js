@@ -1,6 +1,7 @@
 import Book from "../models/Book.js";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
+import Category from "../../category/model/category.js";
 
 const excecute = async (req, res) => {
   try {
@@ -58,10 +59,17 @@ const excecute = async (req, res) => {
       .populate("categoryId", "name slug")
       .lean();
 
+    const booksWithCover = data.map((book) => ({
+      ...book,
+      coverUrl: book.coverId
+        ? `https://covers.openlibrary.org/b/id/${book.coverId}-L.jpg`
+        : null,
+    }));
+
     return res.status(StatusCodes.OK).send({
       status: StatusCodes.OK,
       message: ReasonPhrases.OK,
-      data,
+      data: booksWithCover,
       pagination: {
         page: pageNum,
         limit: limitNum,

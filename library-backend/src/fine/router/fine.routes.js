@@ -5,6 +5,9 @@ import getAllFines from "../controller/getAllFines.js";
 import getMyFines from "../controller/getMyFines.js";
 import payFine from "../controller/payFine.js";
 import confirmPay from "../controller/confirmPay.js";
+import createVnpayPayment from "../controller/createVnpayPayment.js";
+import vnpayReturn from "../controller/vnpayReturn.js";
+import vnpayIPN from "../controller/vnpayIPN.js";
 
 const router = express.Router();
 
@@ -25,4 +28,8 @@ router.get("/my-fines", userAuth, getMyFines.excecute);
 
 router.patch("/pay/:fineId", userAuth, payFine.excecute);
 
+router.post("/create-vnpay-payment/:fineId", userAuth, createVnpayPayment.excecute);
+
+router.get("/vnpay-return", vnpayReturn.excecute);
+router.post("/vnpay-ipn", vnpayIPN.excecute);
 export default router;

@@ -96,6 +96,15 @@ const excecute = async (req, res) => {
                         views: "$bookDetails.views",
                         image: "$bookDetails.image",
                         coverId: "$bookDetails.coverId",
+                        coverURL: {
+                            $cond: {
+                                if: { $ne : ["$bookDetails.coverId", null] },
+                                then: {
+                                    $concat: ["https://covers.openlibrary.org/b/id/", { $toString: "$bookDetails.coverId" }, "-L.jpg"],
+                                },
+                                else: "$bookDetails.image",
+                            }
+                        }
                     },
                     category: {
                         _id: "$category._id",
