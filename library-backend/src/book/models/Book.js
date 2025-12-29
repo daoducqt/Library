@@ -33,6 +33,8 @@ const BookSchema = new Schema(
     // đọc online
     lendingIdentifier : { type: String, index: true, sparse: true }, // lending identifier để đọc online từ Open Library
     isbn: [ String ],
+
+    likes: [ { type: Schema.Types.ObjectId, ref: "User", default: [] } ],
   }, 
   { timestamps: true }
 );
