@@ -18,7 +18,7 @@ import recommendBookCategory from "../controllers/recommendCate.js";
 import uploadBook from "../../../core/middleware/uploadBook.js";
 import upImage from "../../book/controllers/uploadBookImage.js"
 import likeBook from "../controllers/likeBook.js";
-import getLikeCount from "../controllers/getLikeCount.js";
+// import getLikeCount from "../controllers/getLikeCount.js";
 
 const router = express.Router();
 // Lấy danh sách sách, có search + phân trang
@@ -98,9 +98,9 @@ router.route("/like/:bookId").post(
   authenticationMiddleware.verifyToken,
   likeBook.excecute
 );
-router.route("/like-count/:bookId").get(
-  authenticationMiddleware.verifyToken,
-  getLikeCount.excecute
-);
+// router.route("/like-count/:bookId").get(
+//   authenticationMiddleware.verifyToken,
+//   getLikeCount.excecute
+// );
 
 export default router;

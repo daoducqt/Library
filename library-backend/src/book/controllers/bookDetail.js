@@ -31,6 +31,12 @@ const excecute = async (req, res) => {
             ? `https://covers.openlibrary.org/b/id/${book.coverId}-L.jpg` 
             : null;
         
+        // like count
+        bookData.likeCount = book.likes ? book.likes.length : 0;
+
+        const userId = req.user?._id;
+        bookData.userLiked = userId && book.likes ? book.likes.some(id => id.equals(userId)) : false;
+
         // Thêm link đọc online
         if (book.lendingIdentifier) {
             bookData.readOnlineUrl = `https://archive.org/details/${book.lendingIdentifier}`;
