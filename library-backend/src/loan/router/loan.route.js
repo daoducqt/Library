@@ -14,6 +14,13 @@ import markOverDue from "../controller/markOverDue.js";
 import loanActive from "../controller/loanActive.js";
 import getOverDue from "../controller/getOverDue.js";
 import top10Borrowed from "../controller/top10Borrowed.js";
+import confirmCodeBook from "../controller/comfrimCodeBook.js";
+import cancelBorrow from "../controller/cancelBorrow.js";
+import checkCode from "../controller/checkCode.js";
+import pendingloans from "../controller/pendingloans.js";
+import searchUserPending from "../controller/searchUserPending.js";
+import getOnePendingLoan from "../controller/getOnePendingLoan.js";
+
 
 const router = express.Router();
 
@@ -38,6 +45,22 @@ router.get("/stats", adminAuth, loanStats.excecute);
 // not authenticated user routes
 // 📌 Lấy top 10 sách được mượn nhiều nhất trong khoảng thời gian
 router.route("/top10-borrowed").get(top10Borrowed.excecute);
+
+// check Code 
+router.post("/check-code",adminAuth,validateRequest(checkCode.validate),checkCode.excecute);
+
+// admin confirm mã lấy sách
+router.post("/confirm-code/:loanId/",adminAuth,confirmCodeBook.excecute);
+
+// lấy danh sách các yêu cầu mượn sách đang chờ xử lý
+router.get("/pendinglist",adminAuth,pendingloans.excecute);
+
+// tìm kiếm user và xem pending
+router.get("/pending-search",adminAuth,searchUserPending.excecute);
+
+// lấy chi tiết 1 yêu cầu mượn sách đang chờ xử lý
+router.get("/pending-detail/:loanId",adminAuth,getOnePendingLoan.excecute);
+
 // Authenticated user routes
 // 📌 Lấy lịch sử mượn trả của một user theo userId
 router.get("/history", 
@@ -79,8 +102,11 @@ router.get("/:loanId",
 );
 
 
-
-
-
+// cancel borrow
+router.post(
+  "/cancel-borrow/:loanId",
+  authenticationMiddleware.verifyToken,
+  cancelBorrow.excecute
+);
 
 export default router;

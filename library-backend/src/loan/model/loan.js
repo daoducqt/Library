@@ -7,9 +7,14 @@ const LoanSchema = new mongoose.Schema(
 
         status: {
         type: String,
-            enum: ["BORROWED", "RETURNED", "OVERDUE", "CANCELLED"],
-            default: "BORROWED",
+            enum: ["PENDING","BORROWED", "RETURNED", "OVERDUE", "CANCELLED"],
+            default: "PENDING",
     },
+
+        pickCode: { type: String, required: true, unique: true },
+        pickupExpiry: { type: Date},
+        comfirmedAt: { type: Date },
+        comfirmedby: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
         borrowDate: { type: Date, default: Date.now },
         dueDate: { type: Date, required: true }, // ngày phải trả

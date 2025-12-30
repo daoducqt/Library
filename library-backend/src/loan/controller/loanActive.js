@@ -7,7 +7,7 @@ const excecute = async (req, res) => {
 
         const loans = await Loan.find({
             userId: user._id,
-            status: "BORROWED"
+            status: { $in: ["PENDING", "BORROWED"] },
         }).populate("bookId", "title author");
 
         return res.status(StatusCodes.OK).send({
