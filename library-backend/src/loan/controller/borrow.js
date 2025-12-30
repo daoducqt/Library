@@ -47,6 +47,17 @@ const excecute = async (req, res) => {
       status: { $in: ["BORROWED", "OVERDUE"] },
     });
 
+    const alreadyBorrowedThisBook = activeLoans.some(
+      loan => loan.bookId.toString() === bookId
+    );
+
+    if (alreadyBorrowedThisBook) {
+      return res.status(StatusCodes.BAD_REQUEST).send({
+        status: StatusCodes.BAD_REQUEST,
+        message: "Bạn đã mượn cuốn sách này rồi",
+      });
+    }
+    
     // ❌ có sách quá hạn
     const hasOverdue = activeLoans.some(
       loan => loan.status === "OVERDUE"

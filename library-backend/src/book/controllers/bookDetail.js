@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
 import Book from "../models/Book.js";
+import borrow from "../../loan/controller/borrow.js";
 
 const excecute = async (req, res) => {
     try {
@@ -36,6 +37,25 @@ const excecute = async (req, res) => {
 
         const userId = req.user?._id;
         bookData.userLiked = userId && book.likes ? book.likes.some(id => id.equals(userId)) : false;
+
+        if (userId) {
+            const activeLoan = book.loans.findOne({
+                userId,
+                bookId: id,
+                status: "BORROWED"  
+            });
+
+            bookData.userBorrowed = !!activeLoan;
+            bookData.activeLoan = activeLoan ? {
+                loanId: activeLoan._id,
+                borrowDate: activeLoan.borrowDate,
+                dueDate: activeLoan.dueDate,
+                extendCount: activeLoan.extendCount
+            } : null;
+        } else {
+            bookData.userBorrowed = false;
+            bookData.activeLoan = null;
+            }
 
         // Thêm link đọc online
         if (book.lendingIdentifier) {
