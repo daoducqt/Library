@@ -6,6 +6,7 @@ import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
 import Fine from "../../fine/model/fine.js";
 import { notifyBorrow } from "../../notification/services/notification.service.js";
+import { generatePickupCode } from "../service/loan.service.js";
 
 const MAX_ACTIVE_BORROWS = 10;
 const MAX_BORROW_DAYS = 60;
@@ -44,8 +45,19 @@ const excecute = async (req, res) => {
     /* ===== 2️⃣ kiểm tra loan đang tồn tại ===== */
     const activeLoans = await Loan.find({
       userId: user._id,
-      status: { $in: ["BORROWED", "OVERDUE"] },
+      status: { $in: ["PENDING", "BORROWED", "OVERDUE"] },
     });
+
+    const alreadyBorrowedThisBook = activeLoans.some(
+      loan => loan.bookId.toString() === bookId
+    );
+
+    if (alreadyBorrowedThisBook) {
+      return res.status(StatusCodes.BAD_REQUEST).send({
+        status: StatusCodes.BAD_REQUEST,
+        message: "Bạn đã mượn cuốn sách này rồi",
+      });
+    }
 
     // ❌ có sách quá hạn
     const hasOverdue = activeLoans.some(
@@ -91,18 +103,22 @@ const excecute = async (req, res) => {
     const borrowDate = new Date();
     const dueDate = new Date(borrowDate.getTime() + days * 86400000);
 
+    const pickCode = await generatePickupCode();
+    const pickupExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
     const loan = await Loan.create({
       userId: user._id,
       bookId,
       borrowDate,
       dueDate,
-      status: "BORROWED",
+      status: "PENDING",
+      pickCode,
+      pickupExpiry,
     });
 
-    /* ===== 5️⃣ update số lượng sách ===== */
-    await Book.findByIdAndUpdate(bookId, {
-      $inc: { availableCopies: -1 },
-    });
+    // /* ===== 5️⃣ update số lượng sách ===== */
+    // await Book.findByIdAndUpdate(bookId, {
+    //   $inc: { availableCopies: -1 },
+    // });
 
     /* ===== 6️⃣ gửi thông báo ===== */
     try {
@@ -115,6 +131,8 @@ const excecute = async (req, res) => {
       status: StatusCodes.OK,
       message: "Mượn sách thành công",
       data: loan,
+      pickCode,
+      pickupExpiry,
     });
 
   } catch (error) {
