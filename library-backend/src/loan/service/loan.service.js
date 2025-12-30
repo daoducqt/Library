@@ -18,3 +18,16 @@ export async function autoUpdateOverdue() {
         console.error("Auto overdue failed:", err);
     }
 }
+
+export const generatePickupCode = async () => {
+    let code;
+    let exists = true;
+
+    while (exists) {
+        code = Math.floor(100000 + Math.random() * 900000).toString();
+
+        exists = await Loan.exists({ pickCode: code, status: { $in: ["PENDING", "BORROWED"] } });
+    }
+
+    return code;
+};
