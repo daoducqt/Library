@@ -1,4 +1,4 @@
-import Whislist from "../model/whislist.model.js";
+import Wishlist from "../model/whislist.model.js";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
 
@@ -7,7 +7,7 @@ const excecute = async (req, res) => {
         const { wishlistId } = req.params;
         const userId = req.user._id;
 
-        const wishlist = await Whislist.findOne({ _id: wishlistId, userId });
+        const wishlist = await Wishlist.findOne({ _id: wishlistId, userId });
 
         if (!wishlist) {
             return res.status(StatusCodes.NOT_FOUND).send({
@@ -16,7 +16,7 @@ const excecute = async (req, res) => {
             });
         }
 
-        await Whislist.deleteOne({ _id: wishlistId});
+        await Wishlist.deleteOne({ _id: wishlistId});
 
         return res.status(StatusCodes.OK).send({
             status: StatusCodes.OK,

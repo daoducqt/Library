@@ -1,7 +1,6 @@
-import Wishlist from "../models/Wishlist.js";
+import Wishlist from "../model/Wishlist.js";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
-import { mongo } from "mongoose";
 
 const excecute = async (req, res) => {
   try {

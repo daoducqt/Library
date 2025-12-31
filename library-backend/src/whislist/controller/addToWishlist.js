@@ -1,6 +1,7 @@
 import Wishlist from "../model/whislist.model.js";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
+import Book from "../../book/models/Book.js";
 
 const excecute = async (req, res) => {
     try {
@@ -14,7 +15,7 @@ const excecute = async (req, res) => {
             });
         }
 
-        const book = await Wishlist.findById(bookId);
+        const book = await Book.findById(bookId);
         if (!book) {
             return res.status(StatusCodes.NOT_FOUND).send({
                 status: StatusCodes.NOT_FOUND,
@@ -38,7 +39,7 @@ const excecute = async (req, res) => {
             });
         }
 
-        const wishlist = new Wishlist.create({ userId, bookId, note });
+        const wishlist = await Wishlist.create({ userId, bookId, note });
 
         return res.status(StatusCodes.CREATED).send({
             status: StatusCodes.CREATED,
@@ -48,7 +49,7 @@ const excecute = async (req, res) => {
     } catch (error) {
         console.error("Add to wishlist error:", error);
 
-        if (error.name === "11000") {
+        if (error.code === "11000") {
             return res.status(StatusCodes.BAD_GATEWAY).send({
                 status: StatusCodes.BAD_GATEWAY,
                 message: "Sách đã có trong wishlist của bạn",
