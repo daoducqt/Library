@@ -1,19 +1,19 @@
-import Wishlist from "../models/Wishlist.js";
+import Wishlist from "../model/whislist.model.js"; 
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
-import { mongo } from "mongoose";
+import mongoose from "mongoose"; 
 
 const excecute = async (req, res) => {
   try {
     const userId = req.user._id;
     const { status = "PENDING" } = req.query;
-
+    
     if(!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(StatusCodes.BAD_REQUEST).send({
         status: StatusCodes.BAD_REQUEST,
         message: "User ID không hợp lệ",
       });
-    }
+    } 
     
     const query = { userId };
     if (status) {
@@ -23,6 +23,7 @@ const excecute = async (req, res) => {
     const wishlist = await Wishlist.find(query)
       .populate({
         path: "bookId",
+        select: "title author coverId image availableCopies", 
         populate: {
           path: "categoryId",
           select: "name slug"
@@ -31,25 +32,34 @@ const excecute = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    // Thêm coverUrl
-    const wishlistWithCover = wishlist.map((item) => ({
-      ...item,
-      bookId: item.bookId ? {
-        ...item.bookId,
+    const wishlistFormatted = wishlist.map((item) => ({
+      _id: item._id,
+      status: item.status,
+      note: item.note,
+      createdAt: item.createdAt,
+      notifiedAt: item.notifiedAt,
+      book: item.bookId ? {
+        _id: item.bookId._id,
+        title: item.bookId.title,
+        author: item.bookId.author,
         coverUrl: item.bookId.coverId
           ? `https://covers.openlibrary.org/b/id/${item.bookId.coverId}-L.jpg`
           : item.bookId.image || null,
-        likeCount: item.bookId.likes ? item.bookId.likes.length : 0,
+        availableCopies: item.bookId.availableCopies,
+        category: item.bookId.categoryId ? {
+          name: item.bookId.categoryId.name,
+          slug: item.bookId.categoryId.slug
+        } : null
       } : null,
     }));
 
     return res.status(StatusCodes.OK).send({
       status: StatusCodes.OK,
       message: ReasonPhrases.OK,
-      data: wishlistWithCover,
+      data: wishlistFormatted,
     });
   } catch (error) {
-    console.error("getMyWishlist error:", error);
+    console.error("getWishlist error:", error);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       status: StatusCodes.INTERNAL_SERVER_ERROR,
       message: ReasonPhrases.INTERNAL_SERVER_ERROR,

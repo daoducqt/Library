@@ -24,27 +24,24 @@ const autoGenerateFine = async () => {
 
         for (const loan of overdueLoans) {
             const existingFine = await Fine.findOne({ loanId: loan._id});
+            const daysLate = Math.floor((now - loan.dueDate) / (1000 * 60 * 60 * 24));
 
             if (existingFine) {
-                const daysLate = Math.floor((now - loan.dueDate) / (1000 * 60 * 60 * 24));
-            };
+                if (daysLate > existingFine.daysLate && !existingFine.isPayed) {
+                    existingFine.daysLate = daysLate;
+                    existingFine.amount = daysLate * FINE_PER_DAY;
+                    await existingFine.save();
 
-            if (daysLate > existingFine.daysLate && !existingFine.isPayed) {
-                existingFine.daysLate = daysLate;
-                existingFine.amount = daysLate * FINE_PER_DAY;
-                await existingFine.save();
-
-                console.log(`Updated fine for loan ${loan._id}: ${existingFine.amount} VND for ${daysLate} days late.`);
+                    console.log(`Updated fine for loan ${loan._id}: ${existingFine.amount} VND for ${daysLate} days late.`);
+                }
             } else {
-                const daysLate = Math.floor((now - loan.dueDate) / (1000 * 60 * 60 * 24));
-
                 if (daysLate > 0) {
                     const fineAmount = daysLate * FINE_PER_DAY;
                     const newFine = new Fine({
-                        loanId: loan.userId,
+                        userId: loan.userId,
                         loanId: loan._id,
                         daysLate,
-                        amount: daysLate * FINE_PER_DAY,
+                        amount: fineAmount,
                     });
                     console.log(`Creating fine for loan ${loan._id}: ${fineAmount} VND for ${daysLate} days late.`);
                     await newFine.save();
@@ -67,4 +64,3 @@ const autoGenerateFine = async () => {
 };
 
 export default autoGenerateFine;
-        
