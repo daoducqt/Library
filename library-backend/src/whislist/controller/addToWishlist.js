@@ -1,7 +1,7 @@
 import Wishlist from "../model/whislist.model.js";
+import Book from "../../book/models/Book.js";  
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
-import Book from "../../book/models/Book.js";
 
 const excecute = async (req, res) => {
     try {
@@ -26,15 +26,15 @@ const excecute = async (req, res) => {
         if (book.availableCopies > 0) {
             return res.status(StatusCodes.BAD_REQUEST).send({
                 status: StatusCodes.BAD_REQUEST,
-                message: "Sách vẫn còn bản để mượn, không thể thêm vào wishlist",
+                message: "Sách vẫn còn bản để mượn, không cần thêm vào wishlist",
             });
         }
 
         const existing = await Wishlist.findOne({ userId, bookId, status: "PENDING" });
 
         if (existing) {
-            return res.status(StatusCodes.BAD_GATEWAY).send({
-                status: StatusCodes.BAD_GATEWAY,
+            return res.status(StatusCodes.BAD_REQUEST).send({  
+                status: StatusCodes.BAD_REQUEST,
                 message: "Sách đã có trong wishlist của bạn",
             });
         }
@@ -43,15 +43,15 @@ const excecute = async (req, res) => {
 
         return res.status(StatusCodes.CREATED).send({
             status: StatusCodes.CREATED,
-            message: ReasonPhrases.CREATED,
+            message: "Đã thêm vào danh sách đặt trước",
             data: wishlist,
         });
     } catch (error) {
         console.error("Add to wishlist error:", error);
 
-        if (error.code === "11000") {
-            return res.status(StatusCodes.BAD_GATEWAY).send({
-                status: StatusCodes.BAD_GATEWAY,
+        if (error.code === 11000) {
+            return res.status(StatusCodes.BAD_REQUEST).send({
+                status: StatusCodes.BAD_REQUEST,
                 message: "Sách đã có trong wishlist của bạn",
             });
         }

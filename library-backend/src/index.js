@@ -9,6 +9,8 @@ import StockRouter from "./stockIn/router/index.js";
 import fineRouter from "./fine/router/index.js";
 import AdminRouter from "./adminDashboard/router/index.js";
 import LocationRouter from "./location/router/index.js";
+import WishlistRouter from "./whislist/router/index.js";
+import FavoriteRouter from "./favorite/router/index.js";
 
 const routes = (app) => {
   UserRoutes(app);
@@ -22,6 +24,8 @@ const routes = (app) => {
   fineRouter(app);
   AdminRouter(app);
   LocationRouter(app);
+  WishlistRouter(app);
+  FavoriteRouter(app);
 };
 
 export { routes };
