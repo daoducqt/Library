@@ -1,8 +1,15 @@
 "use client";
 
-import { Author, Books, GetBooksResponse } from "@/type/book";
-import React from "react";
+import {
+  Author,
+  Books,
+  dataTopBook,
+  GetBooksResponse,
+  getTopbook,
+} from "@/type/book";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getTopBooks } from "@/service/books/top10books";
 
 /* ──────────────────────  Types  ────────────────────── */
 interface Book {
@@ -84,30 +91,28 @@ export default function MainContent({
   const router = useRouter();
   const [activeFilter, setActiveFilter] = React.useState<string>("all");
 
-  const filterTabs = [
-    { key: "all", label: "Tất cả", icon: "📚" },
-    { key: "public", label: "Công khai", icon: "🔓" },
-    { key: "restricted", label: "Hạn chế", icon: "🔒" },
-  ];
-
   const handleBookClick = (bookId: string) => {
     router.push(`/detail/${bookId}`);
   };
 
-  // Lấy tất cả sách (không giới hạn 30)
+  // Lấy tất cả sách (không giới hạn 30) và chỉ lấy sách có available: true
   const filteredBooks = React.useMemo(() => {
     const allBooks = books?.data || [];
-    if (activeFilter === "all") return allBooks;
+    // Lọc chỉ lấy sách có available: true
+    const availableBooks = allBooks.filter((b: Books) => b.available === true);
+
+    if (activeFilter === "all") return availableBooks;
     if (activeFilter === "public")
-      return allBooks.filter((b: Books) => b.public_scan);
-    return allBooks.filter((b: Books) => !b.public_scan);
+      return availableBooks.filter((b: Books) => b.public_scan);
+    return availableBooks.filter((b: Books) => !b.public_scan);
   }, [activeFilter, books?.data]);
 
   // Lấy thông tin phân trang
   const totalPages = books?.pagination?.totalPages || 1;
   const totalBooks = books?.pagination?.total || 0;
   const currentPageNum = books?.pagination?.page || currentPage;
-
+  const [loading, setLoading] = useState(true);
+  const [topBooks, setTopBooks] = useState<dataTopBook | null>(null);
   // Tạo mảng số trang để hiển thị
   const getPageNumbers = () => {
     const pages = [];
@@ -141,6 +146,25 @@ export default function MainContent({
     return pages;
   };
 
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        setLoading(true);
+        const res = await getTopBooks(10, "month");
+
+        if (res?.data) {
+          setTopBooks(res.data);
+        }
+      } catch (error) {
+        console.error("Lỗi lấy danh sách sách:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+  console.log("Top Books:", topBooks);
   return (
     <main className="min-h-screen bg-black text-white py-8 relative overflow-hidden">
       {/* Animated background layers */}
@@ -255,31 +279,6 @@ export default function MainContent({
             {/* Tabs / Filters */}
             <div className="bg-black/40 border-b border-gray-800 p-5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-8">
-                  {filterTabs.map((tab) => (
-                    <button
-                      key={tab.key}
-                      onClick={() => setActiveFilter(tab.key)}
-                      className={`relative py-3 px-4 text-base font-bold transition-all duration-300 ${
-                        activeFilter === tab.key
-                          ? "text-gray-200 scale-105"
-                          : "text-gray-500 hover:text-gray-300"
-                      }`}
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="text-lg">{tab.icon}</span>
-                        {tab.label}
-                      </span>
-                      {activeFilter === tab.key && (
-                        <>
-                          <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-gray-600 via-gray-400 to-gray-600 rounded-t-full"></div>
-                          <div className="absolute inset-0 bg-gray-700/10 rounded-lg -z-10"></div>
-                        </>
-                      )}
-                    </button>
-                  ))}
-                </div>
-
                 {/* Thông tin tổng số sách */}
                 <div className="text-sm text-gray-400">
                   Tổng:{" "}
@@ -449,7 +448,7 @@ export default function MainContent({
 
           {/* Right: ranked sidebar */}
           <aside className="w-100 flex-shrink-0">
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl shadow-2xl overflow-hidden sticky top-6">
+            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl shadow-2xl overflow-hidden sticky ">
               {/* Decorative top border */}
               <div className="h-0.5 bg-gradient-to-r from-transparent via-gray-700 to-transparent"></div>
 
@@ -470,48 +469,56 @@ export default function MainContent({
               {/* Content */}
               <div className="bg-gradient-to-b from-gray-900 to-black p-5">
                 <div className="space-y-4">
-                  {rankedRow.items.map((book) => (
-                    <div
-                      key={book.id}
-                      className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-800/40 border border-transparent hover:border-gray-700 transition-all duration-300 cursor-pointer group"
-                    >
-                      {/* rank circle */}
-                      <div className="relative">
-                        <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black ${
-                            book.rank === 1
-                              ? "bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600 text-black"
-                              : book.rank === 2
-                              ? "bg-gradient-to-br from-gray-500 via-gray-600 to-gray-700 text-white"
-                              : "bg-gradient-to-br from-gray-600 via-gray-700 to-gray-800 text-white"
-                          }`}
-                        >
-                          {book.rank}
-                        </div>
-                      </div>
+                  {topBooks?.books.map((book, index) => {
+                    const rank = index + 1;
 
-                      {/* thumbnail */}
-                      <div className="relative">
-                        <div
-                          className="w-14 h-20 bg-cover bg-center rounded-lg overflow-hidden shadow-xl border border-gray-800 group-hover:border-gray-600 transition-colors"
-                          style={{ backgroundImage: `url(${book.coverUrl})` }}
-                        />
-                      </div>
+                    return (
+                      <div
+                        key={book.bookId}
+                        className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-800/40 border border-transparent hover:border-gray-700 transition-all duration-300 cursor-pointer group"
+                      >
+                        {/* rank */}
+                        <div className="relative">
+                          <div
+                            className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black ${
+                              rank === 1
+                                ? "bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600 text-black"
+                                : rank === 2
+                                ? "bg-gradient-to-br from-gray-500 via-gray-600 to-gray-700 text-white"
+                                : "bg-gradient-to-br from-gray-600 via-gray-700 to-gray-800 text-white"
+                            }`}
+                          >
+                            {rank}
+                          </div>
+                        </div>
 
-                      {/* text */}
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold line-clamp-2 text-gray-300 group-hover:text-gray-100">
-                          {book.title}
+                        {/* thumbnail */}
+                        <div className="relative">
+                          <div
+                            className="w-14 h-20 bg-cover bg-center rounded-lg overflow-hidden shadow-xl border border-gray-800 group-hover:border-gray-600 transition-colors"
+                            style={{
+                              backgroundImage: `url(${book.bookDetails.coverURL})`,
+                            }}
+                          />
                         </div>
-                        <div className="text-[11px] text-gray-500 mt-1 flex items-center gap-2">
-                          <span className="line-clamp-1">{book.author}</span>
-                          <span className="flex items-center gap-1 text-gray-400 font-semibold">
-                            📖 {book.reads}
-                          </span>
+
+                        {/* text */}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-bold line-clamp-2 text-gray-300 group-hover:text-gray-100">
+                            {book.title}
+                          </div>
+                          <div className="text-[11px] text-gray-500 mt-1 flex items-center gap-2">
+                            <span className="line-clamp-1">
+                              {book.bookDetails.author}
+                            </span>
+                            <span className="flex items-center gap-1 text-gray-400 font-semibold">
+                              📖 {book.borrowCount}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

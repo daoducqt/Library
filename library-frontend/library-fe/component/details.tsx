@@ -3,6 +3,7 @@ import { getDetails } from "@/service/books/getDetail";
 import { borrowBooks } from "@/service/books/borrowBooks";
 import React, { useEffect, useState } from "react";
 import { AxiosError } from "axios";
+import { useRouter } from "next/navigation";
 
 interface Author {
   key: string;
@@ -48,8 +49,10 @@ const BookDetailsPage: React.FC<BookDetailsProps> = ({ slug }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [books, setBooks] = useState<BookDetails | undefined>(undefined);
   const [showBorrowModal, setShowBorrowModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [borrowDays, setBorrowDays] = useState(7);
   const [isBorrowing, setIsBorrowing] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setIsVisible(true);
@@ -130,8 +133,8 @@ const BookDetailsPage: React.FC<BookDetailsProps> = ({ slug }) => {
       const response = await borrowBooks(slug, borrowDays);
 
       if (response?.data) {
-        alert(`Mượn sách thành công! Thời gian: ${borrowDays} ngày`);
         setShowBorrowModal(false);
+        setShowSuccessModal(true);
       }
     } catch (error: unknown) {
       const err = error as AxiosError<{ message: string }>;
@@ -164,7 +167,7 @@ const BookDetailsPage: React.FC<BookDetailsProps> = ({ slug }) => {
       </div>
     );
   }
-console.log(books, "book details render");
+  console.log(books, "book details render");
   return (
     <>
       {/* Fantasy Background */}
@@ -283,7 +286,7 @@ console.log(books, "book details render");
               <button
                 className="magic-button"
                 onClick={
-                  books.availableCopies > 0  ? handleBorrowClick : undefined
+                  books.availableCopies > 0 ? handleBorrowClick : undefined
                 }
                 style={{
                   padding: "15px 50px",
@@ -926,6 +929,210 @@ console.log(books, "book details render");
               >
                 {isBorrowing ? "⏳ Đang xử lý..." : "✅ Xác Nhận"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.85)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1001,
+            backdropFilter: "blur(5px)",
+          }}
+        >
+          <div
+            className="magic-card"
+            style={{
+              width: "90%",
+              maxWidth: "600px",
+              padding: "50px 40px",
+              position: "relative",
+              animation: "fadeIn 0.5s ease-in-out, scaleIn 0.5s ease-in-out",
+              textAlign: "center",
+              background:
+                "linear-gradient(135deg, rgba(138, 43, 226, 0.2) 0%, rgba(75, 0, 130, 0.3) 100%)",
+              borderRadius: "20px",
+              border: "3px solid rgba(255, 215, 0, 0.5)",
+              boxShadow:
+                "0 0 50px rgba(138, 43, 226, 0.6), 0 0 100px rgba(255, 215, 0, 0.3)",
+            }}
+          >
+            {/* Success Icon with Animation */}
+            <div
+              style={{
+                fontSize: "6rem",
+                marginBottom: "30px",
+                animation: "bounce 1s ease-in-out",
+              }}
+            >
+              ✨🎉✨
+            </div>
+
+            {/* Success Title */}
+            <h2
+              style={{
+                fontSize: "2.5rem",
+                color: "#ffd700",
+                marginBottom: "20px",
+                fontWeight: "bold",
+                textShadow: "0 0 20px rgba(255, 215, 0, 0.5)",
+                letterSpacing: "2px",
+              }}
+            >
+              Mượn Sách Thành Công!
+            </h2>
+
+            {/* Success Message */}
+            <div
+              style={{
+                fontSize: "1.2rem",
+                color: "#e6d5ff",
+                marginBottom: "25px",
+                lineHeight: "1.8",
+              }}
+            >
+              <p style={{ marginBottom: "15px" }}>
+                🎊 <strong>Chúc mừng!</strong> Bạn đã mượn sách thành công!
+              </p>
+              <p style={{ color: "#b8a6d9", fontSize: "1.1rem" }}>
+                📚{" "}
+                <strong style={{ color: "#ffd700" }}>
+                  &quot;{books?.title}&quot;
+                </strong>
+              </p>
+              <p style={{ marginTop: "15px", color: "#d4c5f9" }}>
+                ⏰ Thời gian mượn:{" "}
+                <strong style={{ color: "#ffd700" }}>{borrowDays} ngày</strong>
+              </p>
+            </div>
+
+            {/* Info Box */}
+            <div
+              style={{
+                padding: "20px",
+                backgroundColor: "rgba(138, 43, 226, 0.15)",
+                borderRadius: "15px",
+                marginBottom: "35px",
+                border: "2px solid rgba(255, 215, 0, 0.3)",
+              }}
+            >
+              <p
+                style={{
+                  color: "#d4c5f9",
+                  fontSize: "1rem",
+                  lineHeight: "1.8",
+                  marginBottom: "10px",
+                }}
+              >
+                💡 <strong>Lưu ý quan trọng:</strong>
+              </p>
+              <p
+                style={{
+                  color: "#b8a6d9",
+                  fontSize: "0.95rem",
+                  lineHeight: "1.6",
+                }}
+              >
+                Vui lòng trả sách đúng hạn để tránh bị phạt và giúp những người
+                khác có cơ hội đọc sách này nhé! Bạn có thể kiểm tra thông tin
+                mượn sách trong <strong>Trang Cá Nhân</strong> của mình.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div
+              style={{
+                display: "flex",
+                gap: "15px",
+                justifyContent: "center",
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  setBorrowDays(7);
+                }}
+                style={{
+                  padding: "15px 35px",
+                  backgroundColor: "rgba(138, 43, 226, 0.3)",
+                  color: "#e6d5ff",
+                  border: "2px solid rgba(138, 43, 226, 0.6)",
+                  borderRadius: "30px",
+                  cursor: "pointer",
+                  fontSize: "1.1rem",
+                  fontWeight: "bold",
+                  transition: "all 0.3s ease",
+                  letterSpacing: "1px",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(138, 43, 226, 0.5)";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(138, 43, 226, 0.3)";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                📖 Tiếp Tục Khám Phá
+              </button>
+              <button
+                onClick={() => router.push("/")}
+                className="magic-button"
+                style={{
+                  padding: "15px 35px",
+                  backgroundColor: "#8a2be2",
+                  color: "white",
+                  border: "2px solid #ffd700",
+                  borderRadius: "30px",
+                  cursor: "pointer",
+                  fontSize: "1.1rem",
+                  fontWeight: "bold",
+                  letterSpacing: "1px",
+                  boxShadow: "0 0 20px rgba(138, 43, 226, 0.5)",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform =
+                    "translateY(-2px) scale(1.05)";
+                  e.currentTarget.style.boxShadow =
+                    "0 0 30px rgba(255, 215, 0, 0.6)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0) scale(1)";
+                  e.currentTarget.style.boxShadow =
+                    "0 0 20px rgba(138, 43, 226, 0.5)";
+                }}
+              >
+                🏠 Quay Về Trang Chủ
+              </button>
+            </div>
+
+            {/* Decorative Elements */}
+            <div
+              style={{
+                position: "absolute",
+                top: "-20px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                fontSize: "3rem",
+                animation: "float 3s ease-in-out infinite",
+              }}
+            >
+              📚
             </div>
           </div>
         </div>

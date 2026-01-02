@@ -82,6 +82,21 @@ export abstract class RepositoryBase {
     }
   }
 
+  public async patch<T = unknown>(
+    url: string,
+    data?: unknown,
+    config?: AxiosRequestConfig
+  ): Promise<T | null> {
+    
+    try {
+      const res: AxiosResponse<T> = await this.axios.patch<T>(url, data, config);
+      return res.data;
+    } catch (err: unknown) {
+      await this.handleError(err);
+      return null;
+    }
+  }
+
   public async delete<T = unknown>(
     url: string,
     data?: unknown,

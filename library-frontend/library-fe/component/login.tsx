@@ -46,20 +46,18 @@ export default function Login() {
         password: password,
       });
 
-      const data = response?.data;
+      const data = response;
 
       console.log("Login successful:", data);
 
       // Lưu tokens và user info vào localStorage
-      if (data?.accessToken) {
-        document.cookie = `accessToken=${data.accessToken}; path=/;  samesite=strict`;
-        localStorage.setItem("refreshToken", data.refreshToken);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("accessToken", JSON.stringify(data.accessToken));
-        // Chỉ chuyển trang khi login thành công
+      if (data?.status === 200 && data?.data) {
+        // Chỉ lưu user nếu cần
+        localStorage.setItem("user", JSON.stringify(data.data.user));
+
         router.push("/");
       } else {
-        setError("Đăng nhập thất bại. Vui lòng thử lại.");
+        setError(data?.message || "Đăng nhập thất bại.");
       }
     } catch (err: unknown) {
       console.error("Login error:", err);
