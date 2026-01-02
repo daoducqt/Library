@@ -1,15 +1,24 @@
 "use client";
-import { loginEmail, userApi } from "@/service/login/login";
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // Thêm import này
-import { LoginResponse } from "@/type/login";
-export default function Login() {
-  const router = useRouter(); // Thêm hook này
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+import { useRouter } from "next/navigation";
+import { userApi } from "@/service/register/register";
+import { RegisterRequest } from "@/type/register";
+import { AxiosError } from "axios";
+export default function Register() {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    userName: "",
+    fullName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   interface Particle {
     id: number;
@@ -35,49 +44,69 @@ export default function Login() {
     setParticles(newParticles);
   }, []);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // Validation
+    if (
+      !formData.userName ||
+      !formData.fullName ||
+      !formData.email ||
+      !formData.password ||
+      !formData.confirmPassword
+    ) {
+      setError("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Mật khẩu xác nhận không khớp");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError("Mật khẩu phải có ít nhất 6 ký tự");
+      return;
+    }
+
+    if (!acceptTerms) {
+      setError("Vui lòng đồng ý với điều khoản sử dụng");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const response = await userApi.login({
-        account: email,
-        password: password,
-      });
+      const registerData: RegisterRequest = {
+        userName: formData.userName,
+        password: formData.password,
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+      };
 
-      const data = response;
+      const response = await userApi.register(registerData);
 
-      console.log("Login successful:", data);
+      console.log("Register successful:", response);
 
-      // Lưu tokens và user info vào localStorage
-      if (data?.status === 200 && data?.data) {
-        // Chỉ lưu user nếu cần
-        localStorage.setItem("user", JSON.stringify(data.data.user));
-
-        router.push("/");
-      } else {
-        setError(data?.message || "Đăng nhập thất bại.");
-      }
+      // Chuyển đến trang login sau khi đăng ký thành công
+      alert("Đăng ký thành công! Vui lòng đăng nhập.");
+      router.push("/login");
     } catch (err: unknown) {
-      console.error("Login error:", err);
+      console.error("Register error:", err);
+      const error = err as AxiosError<{ message: string }>;
+      const errorMessage =
+        error.response?.data?.message || "Đăng ký thất bại. Vui lòng thử lại.";
 
-      // Type guard để kiểm tra axios error
-      if (err && typeof err === "object" && "response" in err) {
-        const error = err as {
-          response?: {
-            data?: {
-              message?: string;
-            };
-          };
-        };
-        setError(
-          error.response?.data?.message ||
-            "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."
-        );
-      } else {
-        setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
-      }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -95,19 +124,6 @@ export default function Login() {
   const prevCover = () =>
     setActiveCover((s) => (s - 1 + coverImages.length) % coverImages.length);
   const nextCover = () => setActiveCover((s) => (s + 1) % coverImages.length);
-
-  const handleGoogleLogin = async () => {
-    try {
-      const res = await loginEmail();
-      // Nếu API trả về url đăng nhập Google, chuyển hướng sang đó
-      if (res?.url) {
-        window.location.href = res.url;
-      }
-    } catch (err) {
-      console.error("Google login error:", err);
-      // Có thể hiển thị thông báo lỗi nếu muốn
-    }
-  };
 
   return (
     <div
@@ -233,6 +249,10 @@ export default function Login() {
         @keyframes pulse {
           0%, 100% { opacity: 0.3; transform: scale(1); }
           50% { opacity: 0.6; transform: scale(1.05); }
+        }
+        @keyframes borderGlow {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
       `,
         }}
@@ -361,19 +381,8 @@ export default function Login() {
           </div>
 
           <p className="mt-2 text-xs text-purple-300/60 text-center w-full relative z-10 animate-pulse">
-            🔮 Khám phá bộ sưu tập grimoire cổ đại
+            🔮 Gia nhập cộng đồng pháp sư tri thức
           </p>
-
-          <style
-            dangerouslySetInnerHTML={{
-              __html: `
-            @keyframes borderGlow {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `,
-            }}
-          />
         </div>
 
         {/* Right: form */}
@@ -403,24 +412,94 @@ export default function Login() {
 
           <div className="mb-6 relative z-10">
             <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-blue-300 to-purple-300">
-              ✨ Chào mừng trở lại
+              ✨ Tạo tài khoản mới
             </h1>
             <p className="text-sm text-purple-300/70 mt-1">
-              🌙 Đăng nhập để tiếp tục hành trình ma thuật
+              🌙 Bắt đầu hành trình khám phá tri thức ma thuật
             </p>
           </div>
 
-          <div className="space-y-4 relative z-10">
-            {/* Hiển thị thông báo lỗi nếu có */}
-            {error && (
-              <div className="mb-4 p-3 rounded-lg bg-red-500/20 border border-red-400 text-red-300 text-center animate-pulse">
-                {error}
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 text-sm relative z-10">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
+            {/* Username */}
+            <label className="block">
+              <span className="text-sm font-medium text-purple-200 flex items-center gap-2">
+                <span className="w-1 h-1 bg-cyan-400 rounded-full animate-pulse"></span>
+                Tên đăng nhập
+              </span>
+              <div className="mt-1 relative group">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-purple-400 group-hover:text-purple-300 transition-colors">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </span>
+                <input
+                  type="text"
+                  name="userName"
+                  value={formData.userName}
+                  onChange={handleChange}
+                  required
+                  className="w-full pl-11 pr-3 py-2 rounded-xl border border-purple-500/30 bg-slate-800/50 text-purple-100 placeholder-purple-400/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:shadow-lg focus:shadow-purple-500/30 transition-all hover:border-purple-400/50"
+                  placeholder="Nhập tên đăng nhập"
+                  aria-label="Tên đăng nhập"
+                />
               </div>
-            )}
-            {/* Email */}
+            </label>
+
+            {/* Full Name */}
             <label className="block">
               <span className="text-sm font-medium text-purple-200 flex items-center gap-2">
                 <span className="w-1 h-1 bg-purple-400 rounded-full animate-pulse"></span>
+                Họ và tên
+              </span>
+              <div className="mt-1 relative group">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-purple-400 group-hover:text-purple-300 transition-colors">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </span>
+                <input
+                  type="text"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  required
+                  className="w-full pl-11 pr-3 py-2 rounded-xl border border-purple-500/30 bg-slate-800/50 text-purple-100 placeholder-purple-400/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:shadow-lg focus:shadow-purple-500/30 transition-all hover:border-purple-400/50"
+                  placeholder="Nhập họ và tên của bạn"
+                  aria-label="Họ và tên"
+                />
+              </div>
+            </label>
+
+            {/* Email */}
+            <label className="block">
+              <span className="text-sm font-medium text-purple-200 flex items-center gap-2">
+                <span className="w-1 h-1 bg-blue-400 rounded-full animate-pulse"></span>
                 Email
               </span>
               <div className="mt-1 relative group">
@@ -441,8 +520,9 @@ export default function Login() {
                 </span>
                 <input
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
                   required
                   className="w-full pl-11 pr-3 py-2 rounded-xl border border-purple-500/30 bg-slate-800/50 text-purple-100 placeholder-purple-400/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:shadow-lg focus:shadow-purple-500/30 transition-all hover:border-purple-400/50"
                   placeholder="you@grimoire.com"
@@ -451,10 +531,44 @@ export default function Login() {
               </div>
             </label>
 
+            {/* Phone */}
+            <label className="block">
+              <span className="text-sm font-medium text-purple-200 flex items-center gap-2">
+                <span className="w-1 h-1 bg-indigo-400 rounded-full animate-pulse"></span>
+                Số điện thoại
+              </span>
+              <div className="mt-1 relative group">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-purple-400 group-hover:text-purple-300 transition-colors">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                    />
+                  </svg>
+                </span>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="w-full pl-11 pr-3 py-2 rounded-xl border border-purple-500/30 bg-slate-800/50 text-purple-100 placeholder-purple-400/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:shadow-lg focus:shadow-purple-500/30 transition-all hover:border-purple-400/50"
+                  placeholder="0123456789 (không bắt buộc)"
+                  aria-label="Số điện thoại"
+                />
+              </div>
+            </label>
+
             {/* Password */}
             <label className="block">
               <span className="text-sm font-medium text-purple-200 flex items-center gap-2">
-                <span className="w-1 h-1 bg-blue-400 rounded-full animate-pulse"></span>
+                <span className="w-1 h-1 bg-pink-400 rounded-full animate-pulse"></span>
                 Mật khẩu
               </span>
               <div className="mt-1 relative group">
@@ -476,11 +590,12 @@ export default function Login() {
 
                 <input
                   type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
                   required
                   className="w-full pl-11 pr-10 py-2 rounded-xl border border-purple-500/30 bg-slate-800/50 text-purple-100 placeholder-purple-400/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:shadow-lg focus:shadow-purple-500/30 transition-all hover:border-purple-400/50"
-                  placeholder="Nhập mật khẩu ma thuật"
+                  placeholder="Tối thiểu 6 ký tự"
                   aria-label="Mật khẩu"
                 />
 
@@ -495,106 +610,126 @@ export default function Login() {
               </div>
             </label>
 
-            {/* Remember me & Forgot password */}
-            <div className="flex items-center justify-between text-sm">
-              <label className="inline-flex items-center gap-2 text-purple-300 hover:text-purple-200 cursor-pointer transition-colors">
+            {/* Confirm Password */}
+            <label className="block">
+              <span className="text-sm font-medium text-purple-200 flex items-center gap-2">
+                <span className="w-1 h-1 bg-cyan-400 rounded-full animate-pulse"></span>
+                Xác nhận mật khẩu
+              </span>
+              <div className="mt-1 relative group">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-purple-400 group-hover:text-purple-300 transition-colors">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </span>
+
                 <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-purple-500/30 bg-slate-800/50 text-purple-600 focus:ring-purple-500 focus:ring-2"
+                  type={showConfirmPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  className="w-full pl-11 pr-10 py-2 rounded-xl border border-purple-500/30 bg-slate-800/50 text-purple-100 placeholder-purple-400/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:shadow-lg focus:shadow-purple-500/30 transition-all hover:border-purple-400/50"
+                  placeholder="Nhập lại mật khẩu"
+                  aria-label="Xác nhận mật khẩu"
                 />
-                <span>Ghi nhớ tôi</span>
-              </label>
-              <a
-                href="#"
-                className="text-blue-400 hover:text-blue-300 hover:underline transition-colors"
+
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-2 flex items-center px-2 text-sm text-purple-400 hover:text-purple-300 transition-colors"
+                  aria-pressed={showConfirmPassword}
+                >
+                  {showConfirmPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </label>
+
+            {/* Terms and Conditions */}
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+                className="mt-1 w-4 h-4 rounded border-purple-500/30 bg-slate-800/50 text-purple-600 focus:ring-purple-500 focus:ring-2"
+              />
+              <label
+                htmlFor="terms"
+                className="text-sm text-purple-300/70 cursor-pointer hover:text-purple-300 transition-colors"
               >
-                Quên mật khẩu? 🔑
-              </a>
+                Tôi đồng ý với{" "}
+                <a
+                  href="#"
+                  className="text-blue-400 hover:text-blue-300 hover:underline"
+                >
+                  điều khoản sử dụng
+                </a>{" "}
+                và{" "}
+                <a
+                  href="#"
+                  className="text-blue-400 hover:text-blue-300 hover:underline"
+                >
+                  chính sách bảo mật
+                </a>
+              </label>
             </div>
 
             {/* Submit */}
             <div className="relative">
               <button
-                type="button"
-                onClick={handleSubmit}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white font-semibold shadow-lg shadow-purple-500/50 hover:shadow-purple-500/70 hover:scale-[1.02] transition-all border border-purple-400/30 hover:border-purple-300/50 relative overflow-hidden group"
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white font-semibold shadow-lg shadow-purple-500/50 hover:shadow-purple-500/70 hover:scale-[1.02] transition-all border border-purple-400/30 hover:border-purple-300/50 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
-                  ✨ Đăng nhập
-                  <span className="inline-block group-hover:rotate-12 transition-transform">
-                    🔮
-                  </span>
+                  {isLoading ? (
+                    <>
+                      <span className="animate-spin">⏳</span> Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      ✨ Đăng ký ngay
+                      <span className="inline-block group-hover:rotate-12 transition-transform">
+                        🌟
+                      </span>
+                    </>
+                  )}
                 </span>
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
               </button>
             </div>
 
-            {/* Social Login */}
+            {/* Divider */}
             <div className="text-center text-sm text-purple-300/70">
               <span className="flex items-center justify-center gap-2">
                 <span className="w-8 h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent"></span>
-                Hoặc đăng nhập với
+                Hoặc
                 <span className="w-8 h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent"></span>
               </span>
-              <div className="mt-3 flex justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleGoogleLogin}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-purple-500/30 bg-slate-800/50 text-purple-200 hover:bg-slate-800 hover:shadow-lg hover:shadow-purple-500/30 hover:scale-105 transition-all hover:border-purple-400/50"
-                  aria-label="Sign in with Google"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    viewBox="0 0 533.5 544.3"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      fill="#4285f4"
-                      d="M533.5 278.4c0-17.4-1.4-34.1-4-50.4H272v95.3h147.1c-6.4 34.6-25.8 63.9-55.2 83.5v69.4h89.1c52.3-48.2 82.5-119.3 82.5-197.8z"
-                    />
-                    <path
-                      fill="#34a853"
-                      d="M272 544.3c74 0 136-24.6 181.3-66.9l-89.1-69.4c-25 17-57 27-92.2 27-70.9 0-131-47.9-152.3-112.5H28.6v70.6C73.7 486.9 166 544.3 272 544.3z"
-                    />
-                    <path
-                      fill="#fbbc04"
-                      d="M119.7 323.5c-8.6-25.9-8.6-53.8 0-79.7V173.2H28.6c-39.5 78.9-39.5 171.6 0 250.5l91.1-100.2z"
-                    />
-                    <path
-                      fill="#ea4335"
-                      d="M272 107.6c39.8-.6 78.2 14.5 107.4 41.9l80.6-80.6C406.1 26 344.1 0 272 0 166 0 73.7 57.4 28.6 142.8l91.1 70.6C141 155.5 201.1 107.6 272 107.6z"
-                    />
-                  </svg>
-                  Google
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-purple-500/30 bg-slate-800/50 text-purple-200 hover:bg-slate-800 hover:shadow-lg hover:shadow-purple-500/30 hover:scale-105 transition-all hover:border-purple-400/50"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    aria-hidden
-                  >
-                    <path d="M12 2C8.1 2 5 5.1 5 9c0 4 3 7 7 7s7-3 7-7c0-3.9-3.1-7-7-7zm0 9.5c-1.4 0-2.5-1.1-2.5-2.5S10.6 6.5 12 6.5s2.5 1.1 2.5 2.5S13.4 11.5 12 11.5zM4 20c0-3.3 4.7-5 8-5s8 1.7 8 5v1H4v-1z" />
-                  </svg>
-                  Guest 👤
-                </button>
-              </div>
             </div>
 
-            {/* Sign up link */}
+            {/* Login link */}
             <p className="text-center text-sm text-purple-300/70">
-              Chưa có tài khoản?{" "}
+              Đã có tài khoản?{" "}
               <a
-                href="/register"
+                href="/login"
                 className="text-blue-400 hover:text-blue-300 hover:underline transition-colors font-medium"
               >
-                Đăng ký ngay 🌟
+                Đăng nhập ngay 🔑
               </a>
             </p>
-          </div>
+          </form>
         </div>
       </div>
     </div>
