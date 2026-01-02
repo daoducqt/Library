@@ -11,12 +11,15 @@ const validate = Joi.object({
     // description: Joi.string().allow(null, "").trim().messages({
     // "string.base": "Mô tả danh mục phải là chuỗi",
     // }),
-    icon: Joi.string().allow(null, ""),
     isActive: Joi.boolean(),
+    viName: Joi.string().allow(null, "").trim().messages({
+    "string.base": "Tên tiếng việt phải là chuỗi",
+    }),
     order: Joi.number().integer().min(0).messages({
     "number.base": "Thứ tự phải là số",
     "number.integer": "Thứ tự phải là số nguyên",
     "number.min": "Thứ tự phải lớn hơn hoặc bằng 0",
+    
     }),
 });
 
@@ -37,6 +40,7 @@ const excecute = async (req, res) => {
             data: category,
         });
     } catch (error) {
+        console.error("Create Category error:", error);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
             status: StatusCodes.INTERNAL_SERVER_ERROR,
             message: ReasonPhrases.INTERNAL_SERVER_ERROR,

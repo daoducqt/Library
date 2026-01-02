@@ -11,6 +11,7 @@ import { autoUpdateOverdue } from './src/loan/service/loan.service.js';
 import { checkDueLoans } from './src/loan/service/overDueCheck.js';
 import scheduleFineGenerationJob from './src/fine/services/cronjob.js';
 import { cleanupExpiredPickups } from './src/loan/service/cleanupExpiredCode.js';
+import autoGenerateFine from './src/fine/services/autoGenerateFine.js';
 
 dotenv.config();
 
@@ -69,3 +70,4 @@ dbConfig
 cron.schedule("0 * * * *", autoUpdateOverdue); // mỗi giờ quét 1 lần
 checkDueLoans();
 setInterval(cleanupExpiredPickups, 60 * 60 * 1000);
+autoGenerateFine();

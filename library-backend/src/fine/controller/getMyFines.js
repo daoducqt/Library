@@ -3,9 +3,9 @@ import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 
 const excecute = async (req, res) => {
     try {
-        const user = req.user;
+        const user = req.user._id;
 
-        const fines = await Fine.find({ userId: user.id })
+        const fines = await Fine.find({ userId: user })
             .populate("loanId", "bookId borrowDate dueDate returnDate")
             .sort({ createdAt: -1 });
 

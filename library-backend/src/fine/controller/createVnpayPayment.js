@@ -6,8 +6,8 @@ import VnPayService from "../services/vnpay.service.js";
 const excecute = async (req, res) => {
     try {
         const { fineId } = req.params;
-        const { bankCode } = req.body;
-        const userId = req.user.id;
+        const bankCode = req.body?.bankCode || null; 
+        const userId = req.user._id;
 
         const ipAddr = req.headers['x-forwarded-for'] ||
             req.connection.remoteAddress ||
@@ -72,4 +72,4 @@ const excecute = async (req, res) => {
         });
     }
 };
-export default { excecute }; 
+export default { excecute };

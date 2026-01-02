@@ -6,7 +6,6 @@
             name: { type: String, required: true, unique: true, trim: true },
             slug: { type: String, required: false, unique: true, trim: true },
             // description: { type: String},
-            icon: { type: String},
             isActive: { type: Boolean, default: true },
             order: { type: Number, default: 1 },
             viName: { type: String, default: "" },
