@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { Bell, Search, User, Moon, Sun } from "lucide-react";
+import { Bell, Search, User, Moon, Sun, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   title?: string;
@@ -9,6 +10,22 @@ interface HeaderProps {
 
 export default function Header({ title = "Dashboard" }: HeaderProps) {
   const [darkMode, setDarkMode] = React.useState(false);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      // Gọi API logout để xóa httpOnly cookies
+      await fetch("/api/logout", { method: "POST" });
+      // Xóa localStorage
+      localStorage.removeItem("user");
+      // Chuyển hướng về trang login
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Vẫn chuyển hướng về login nếu có lỗi
+      router.push("/login");
+    }
+  };
 
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-6 py-4">
@@ -54,6 +71,15 @@ export default function Header({ title = "Dashboard" }: HeaderProps) {
           <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <Bell size={20} className="text-gray-500" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors"
+            title="Đăng xuất"
+          >
+            <LogOut size={20} className="text-red-500" />
           </button>
 
           {/* User Avatar */}
