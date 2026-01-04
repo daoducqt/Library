@@ -22,13 +22,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
-  
+
   // ✨ HÀM XỬ LÝ SEARCH TỪ HEADER
   const handleHeaderSearch = (query: string) => {
     // Dispatch custom event để HomePage có thể lắng nghe
-    window.dispatchEvent(new CustomEvent('header-search', { 
-      detail: { query } 
-    }));
+    window.dispatchEvent(
+      new CustomEvent("header-search", {
+        detail: { query },
+      })
+    );
   };
 
   return (
