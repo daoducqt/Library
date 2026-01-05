@@ -31,15 +31,12 @@ const excecute = async (req, res) => {
 
         if (responseCode === '00') {
             if (fine.isPayed) {
-                return res.status(StatusCodes.OK).send({
-                    status: StatusCodes.OK,
-                    message: "Đơn phạt đã được thanh toán",
-                    data: fine,
-                });
+                return res.redirect(`${process.env.FRONTEND_URL}/payment-success?fineId=${fine._id}&amount=${amount}&message=already_paid`);
             }
         
             fine.isPayed = true;
             fine.paidAt = new Date();
+            fine.paymentMethod = "QR_CODE";
             fine.vnpayTransactionNo = transactionNo;
             fine.vnpayReponseCode = responseCode;
             fine.vnpayBankCode = bankCode;
@@ -50,7 +47,8 @@ const excecute = async (req, res) => {
             fine.vnpayReponseCode = responseCode;
             await fine.save();
 
-            return res.redirect(`${process.env.FRONTEND_URL}/payment-failure?message=${encodeURIComponent(VnPayService.getResponseMessage(responseCode))}`);
+            const errorMessage = VnPayService.getResponseMessage(responseCode);
+            return res.redirect(`${process.env.FRONTEND_URL}/payment-failure?message=${encodeURIComponent(errorMessage)}`);
         }
     } catch (error) {
         console.error("vnpayReturn error:", error);

@@ -11,16 +11,27 @@ const FineSchema = new mongoose.Schema(
 
         paymentMethod: { 
             type: String, 
-            enum: ["CASH", "BANK_TRANSFER", "QR_CODE", "OTHER"],
+            enum: ["CASH", "QR_CODE"], 
             default: null
         },
-        adminNote: { type: String, default: "" }, // Ghi chú của admin khi confirm
         
+        adminNote: { type: String, default: "" },
+        
+        // VNPay fields
         vnpayOrderId: { type: String, default: null, index: true },
         vnpayTransactionNo: { type: String, default: null },
         vnpayReponseCode: { type: String, default: null },
         vnpayBankCode: { type: String, default: null },
 
+        // Thêm vào schema
+        zalopayTransId: {
+            type: String,
+            default: null
+        },
+        zalopayTransactionNo: {
+            type: String,
+            default: null
+        },
     }
     , { timestamps: true }
 );
