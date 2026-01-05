@@ -36,6 +36,7 @@ const userSchema = new Schema(
     pendingEmail: String,
     otpCode: { type: String, select: false },
     otpExpires: { type: Date, select: false },
+    otpPurpose: { type: String, select: false }, 
     isVerified: { type: Boolean, default: false },
   },
   { timestamps: true }

@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import moment from 'moment';
+import QRCode from 'qrcode';
 
 class ZaloPayService {
     constructor() {
@@ -27,7 +28,7 @@ class ZaloPayService {
                 itemquantity: 1
             }]),
             embed_data: JSON.stringify({
-                redirecturl: "http://localhost:3000/payment-success",
+                redirecturl: process.env.FRONTEND_URL + "/payment-success",
                 fineId: fineId
             }),
             callback_url: this.callback_url,
@@ -35,14 +36,11 @@ class ZaloPayService {
             bank_code: "",
         };
 
-        // Tạo MAC theo thứ tự: app_id|app_trans_id|app_user|amount|app_time|embed_data|item
         const data = `${this.app_id}|${order.app_trans_id}|${order.app_user}|${order.amount}|${order.app_time}|${order.embed_data}|${order.item}`;
         order.mac = crypto.createHmac('sha256', this.key1).update(data).digest('hex');
 
         console.log('==================== ZALOPAY DEBUG ====================');
         console.log('Order Data:', JSON.stringify(order, null, 2));
-        console.log('MAC String:', data);
-        console.log('MAC:', order.mac);
         console.log('======================================================');
 
         try {
@@ -58,11 +56,20 @@ class ZaloPayService {
             console.log('ZaloPay Response:', result);
 
             if (result.return_code === 1) {
+                // ✅ Tạo QR code từ order_url
+                const qrCodeDataURL = await QRCode.toDataURL(result.order_url, {
+                    errorCorrectionLevel: 'M',
+                    type: 'image/png',
+                    width: 300,
+                    margin: 2,
+                });
+
                 return {
                     success: true,
                     order_url: result.order_url,
                     app_trans_id: app_trans_id,
-                    zp_trans_token: result.zp_trans_token
+                    zp_trans_token: result.zp_trans_token,
+                    qr_code: qrCodeDataURL, // ✅ Base64 QR code
                 };
             } else {
                 return {
