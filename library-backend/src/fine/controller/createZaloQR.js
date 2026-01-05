@@ -15,7 +15,7 @@ const excecute = async (req, res) => {
             });
         }
 
-        const fine = await Fine.findById(fineId);
+        const fine = await Fine.findById(fineId).populate('loanId');
         if (!fine) {
             return res.status(StatusCodes.NOT_FOUND).send({
                 status: StatusCodes.NOT_FOUND,
@@ -57,9 +57,20 @@ const excecute = async (req, res) => {
             status: StatusCodes.OK,
             message: "Tạo thanh toán ZaloPay thành công",
             data: {
-                order_url: result.order_url,
-                app_trans_id: result.app_trans_id,
-                amount: fine.amount
+                //  Thông tin đơn phạt
+                fine: {
+                    _id: fine._id,
+                    amount: fine.amount,
+                    daysLate: fine.daysLate,
+                    reason: fine.reason,
+                    createdAt: fine.createdAt,
+                },
+                //  Thông tin thanh toán
+                payment: {
+                    app_trans_id: result.app_trans_id,
+                    order_url: result.order_url, // Backup nếu QR không load
+                    qr_code: result.qr_code, //  Base64 QR code
+                },
             },
         });
     } catch (error) {
