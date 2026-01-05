@@ -1,24 +1,12 @@
 import mongoose from "mongoose";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import Fine from "../model/fine.js";
-import VnPayService from "../services/vnpay.service.js";
+import ZaloPayService from "../services/zalo.service.js";
 
 const excecute = async (req, res) => {
     try {
         const { fineId } = req.params;
-        const bankCode = req.body?.bankCode || null; 
         const userId = req.user._id;
-
-        // ✅ FIX IP ADDRESS
-        let ipAddr = req.headers['x-forwarded-for'] ||
-            req.connection.remoteAddress ||
-            req.socket.remoteAddress ||
-            req.ip ||
-            '127.0.0.1';
-        
-        if (ipAddr.includes(':')) {
-            ipAddr = '127.0.0.1';
-        }
 
         if (!mongoose.Types.ObjectId.isValid(fineId)) {
             return res.status(StatusCodes.BAD_REQUEST).send({
@@ -30,7 +18,7 @@ const excecute = async (req, res) => {
         const fine = await Fine.findById(fineId);
         if (!fine) {
             return res.status(StatusCodes.NOT_FOUND).send({
-                status : StatusCodes.NOT_FOUND,
+                status: StatusCodes.NOT_FOUND,
                 message: "Không tìm thấy đơn phạt",
             });
         }
@@ -49,33 +37,38 @@ const excecute = async (req, res) => {
             });
         }
 
-        const { paymentUrl, orderId } = VnPayService.createPaymentUrl(
+        const result = await ZaloPayService.createOrder(
             fineId,
             fine.amount,
-            bankCode,
-            ipAddr
+            `Thanh toan phi phat ${fineId}`
         );
 
-        fine.vnpayOrderId = orderId;
-        fine.vnpayBankCode = bankCode === "VNPAYQR" ? "QR_CODE" : null;
+        if (!result.success) {
+            return res.status(StatusCodes.BAD_REQUEST).send({
+                status: StatusCodes.BAD_REQUEST,
+                message: result.message || "Không thể tạo thanh toán ZaloPay",
+            });
+        }
+
+        fine.zalopayTransId = result.app_trans_id;
         await fine.save();
 
         return res.status(StatusCodes.OK).send({
             status: StatusCodes.OK,
-            message: "Tạo URL thanh toán VNPay thành công",
+            message: "Tạo thanh toán ZaloPay thành công",
             data: {
-                paymentUrl,
-                orderId,
-                amount: fine.amount,
-                bankCode: bankCode || "All"
+                order_url: result.order_url,
+                app_trans_id: result.app_trans_id,
+                amount: fine.amount
             },
         });
     } catch (error) {
-        console.error("createVnpayPayment error:", error);
+        console.error("createZaloPayPayment error:", error);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
             status: StatusCodes.INTERNAL_SERVER_ERROR,
             message: "Lỗi máy chủ, vui lòng thử lại sau",
         });
     }
 };
+
 export default { excecute };

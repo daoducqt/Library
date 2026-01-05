@@ -6,8 +6,7 @@ import Notification from "../../notification/model/notification.js";
 const excecute = async (req, res) => {
     try {
         const { fineId } = req.params;
-
-        const { paymentMethod = "CASH", note = "" } = req.body;
+        const { note = "" } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(fineId)) {
             return res.status(StatusCodes.BAD_REQUEST).send({
@@ -24,31 +23,32 @@ const excecute = async (req, res) => {
             });
         }
 
-        if (fine.isPaid) {
+        if (fine.isPayed) {
             return res.status(StatusCodes.BAD_REQUEST).send({
                 status: StatusCodes.BAD_REQUEST,
                 message: "Đơn phạt đã được thanh toán",
             });
         }
 
-        fine.isPaid = true;
+        fine.isPayed = true;
         fine.paidAt = new Date();
-        fine.paymentMethod = paymentMethod;
-        fine.note = note;
+        fine.paymentMethod = "CASH";
+        fine.adminNote = note;
         await fine.save();
 
-        // Tạo thông báo cho người dùng về việc thanh toán phạt
+        // Tạo thông báo cho người dùng
         await Notification.create({
-            userId: fine.loanId.userId,
+            userId: fine.userId,
             title: "Thanh toán phạt thành công",
-            message: `Khoản phạt ${fine.amount} đã được thanh toán thành công.`,
+            message: `Khoản phạt ${fine.amount.toLocaleString('vi-VN')} VND đã được thanh toán bằng tiền mặt.`,
             type: "FINE",
             loanId: fine.loanId._id,
             bookId: fine.loanId.bookId,
         });
+        
         return res.status(StatusCodes.OK).send({
             status: StatusCodes.OK,
-            message: "Thanh toán phạt thành công",
+            message: "Đã xác nhận thanh toán tiền mặt",
             data: fine,
         });
     } catch (error) {

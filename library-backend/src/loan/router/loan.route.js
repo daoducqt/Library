@@ -20,6 +20,7 @@ import checkCode from "../controller/checkCode.js";
 import pendingloans from "../controller/pendingloans.js";
 import searchUserPending from "../controller/searchUserPending.js";
 import getOnePendingLoan from "../controller/getOnePendingLoan.js";
+import getLoanBorrow from "../controller/getLoanBorrow.js";
 
 
 const router = express.Router();
@@ -33,14 +34,20 @@ const adminAuth = [
 // 📌 Lấy danh sách tất cả các loan trong hệ thống
 router.get("/list", adminAuth, getList.excecute);
 
-// 📌 [ADMIN] Đánh dấu một loan là quá hạn (OVERDUE)
-router.patch("/:loanId/mark-overdue", adminAuth, markOverDue.excecute);
+// // 📌 [ADMIN] Đánh dấu một loan là quá hạn (OVERDUE)
+// router.patch("/:loanId/mark-overdue", adminAuth, markOverDue.excecute);
 
 // 📌 Lấy danh sách các loan quá hạn (OVERDUE)
 router.get("/overdue", adminAuth, getOverDue.excecute);
 
 // 📌 Thống kê mượn trả sách toàn hệ thống (số lượng, tình trạng, ...)
 router.get("/stats", adminAuth, loanStats.excecute);
+
+// 📌 Trả sách (cập nhật trạng thái loan sang RETURNED)  
+router.post("/:loanId/return", 
+    adminAuth,
+    returnBook.excecute
+);
 
 // not authenticated user routes
 // 📌 Lấy top 10 sách được mượn nhiều nhất trong khoảng thời gian
@@ -51,6 +58,9 @@ router.post("/check-code",adminAuth,validateRequest(checkCode.validate),checkCod
 
 // admin confirm mã lấy sách
 router.post("/confirm-code/:loanId/",adminAuth,confirmCodeBook.excecute);
+
+// lấy danh sách các loan đang mượn (BORROWED)
+router.get("/borrowed",adminAuth,getLoanBorrow.excecute);
 
 // lấy danh sách các yêu cầu mượn sách đang chờ xử lý
 router.get("/pendinglist",adminAuth,pendingloans.excecute);
@@ -82,11 +92,6 @@ router.get(
   loanActive.excecute
 );
 
-// 📌 Trả sách (cập nhật trạng thái loan sang RETURNED)  
-router.post("/:loanId/return", 
-    authenticationMiddleware.verifyToken, 
-    returnBook.excecute
-);
 
 // 📌 Gia hạn mượn sách (extend loan)  
 router.patch("/:loanId/extend", 

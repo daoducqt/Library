@@ -9,55 +9,61 @@ class VNPayService {
         this.vnp_ReturnUrl = process.env.VNP_RETURN_URL;
     }
 
-    /**
-     * Tạo URL thanh toán VNPay
-     * @param {String} fineId - ID của fine
-     * @param {Number} amount - Số tiền cần thanh toán (VND)
-     * @param {String} bankCode - Mã ngân hàng (NCB, VNPAYQR, etc.) hoặc null
-     * @param {String} ipAddr - IP của user
-     */
     createPaymentUrl(fineId, amount, bankCode, ipAddr) {
-        const date = new Date();
-        const createDate = this.formatDate(date);
-        const orderId = fineId + '_' + date.getTime(); // Mã giao dịch unique
-        
-        let vnp_Params = {};
-        vnp_Params['vnp_Version'] = '2.1.0';
-        vnp_Params['vnp_Command'] = 'pay';
-        vnp_Params['vnp_TmnCode'] = this.vnp_TmnCode;
-        vnp_Params['vnp_Locale'] = 'vn';
-        vnp_Params['vnp_CurrCode'] = 'VND';
-        vnp_Params['vnp_TxnRef'] = orderId;
-        vnp_Params['vnp_OrderInfo'] = `Thanh toan phi phat ${fineId}`;
-        vnp_Params['vnp_OrderType'] = 'other';
-        vnp_Params['vnp_Amount'] = amount * 100; // VNPay yêu cầu nhân 100
-        vnp_Params['vnp_ReturnUrl'] = this.vnp_ReturnUrl;
-        vnp_Params['vnp_IpAddr'] = ipAddr;
-        vnp_Params['vnp_CreateDate'] = createDate;
-        
-        // Nếu có bankCode thì thêm vào (để chọn phương thức thanh toán)
-        if (bankCode) {
-            vnp_Params['vnp_BankCode'] = bankCode;
-        }
-        
-        vnp_Params = this.sortObject(vnp_Params);
-        
-        const signData = querystring.stringify(vnp_Params, { encode: false });
-        const hmac = crypto.createHmac("sha512", this.vnp_HashSecret);
-        const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
-        vnp_Params['vnp_SecureHash'] = signed;
-        
-        const paymentUrl = this.vnp_Url + '?' + querystring.stringify(vnp_Params, { encode: false });
-        
-        return {
-            paymentUrl,
-            orderId
-        };
+    const date = new Date();
+    const createDate = this.formatDate(date);
+    
+    // ✅ THÊM: Expire date (15 phút sau)
+    const expireDate = new Date(date.getTime() + 15 * 60 * 1000);
+    const vnp_ExpireDate = this.formatDate(expireDate);
+    
+    const orderId = fineId + '_' + date.getTime();
+    
+    let vnp_Params = {};
+    vnp_Params['vnp_Version'] = '2.1.0';
+    vnp_Params['vnp_Command'] = 'pay';
+    vnp_Params['vnp_TmnCode'] = this.vnp_TmnCode;
+    vnp_Params['vnp_Locale'] = 'vn';
+    vnp_Params['vnp_CurrCode'] = 'VND';
+    vnp_Params['vnp_TxnRef'] = orderId;
+    vnp_Params['vnp_OrderInfo'] = `Thanh toan phi phat ${fineId}`;
+    vnp_Params['vnp_OrderType'] = 'other';
+    vnp_Params['vnp_Amount'] = parseInt(amount, 10) * 100;
+    vnp_Params['vnp_ReturnUrl'] = this.vnp_ReturnUrl;
+    vnp_Params['vnp_IpAddr'] = ipAddr;
+    vnp_Params['vnp_CreateDate'] = createDate;
+    vnp_Params['vnp_ExpireDate'] = vnp_ExpireDate;
+    
+    if (bankCode) {
+        vnp_Params['vnp_BankCode'] = bankCode;
     }
+    
+    vnp_Params = this.sortObject(vnp_Params);
+    
+    // ✅ DEBUG: Log params trước khi hash
+    console.log('==================== VNPAY DEBUG ====================');
+    console.log('vnp_Params (sorted):', JSON.stringify(vnp_Params, null, 2));
+    
+    const signData = querystring.stringify(vnp_Params, { encode: false });
+    console.log('signData (encode=false):', signData);
+    console.log('vnp_HashSecret:', this.vnp_HashSecret);
+    
+    const hmac = crypto.createHmac("sha512", this.vnp_HashSecret);
+    const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
+    console.log('vnp_SecureHash:', signed);
+    
+    vnp_Params['vnp_SecureHash'] = signed;
+    
+    const paymentUrl = this.vnp_Url + '?' + querystring.stringify(vnp_Params, { encode: true });
+    console.log('Full payment URL:', paymentUrl);
+    console.log('====================================================');
+    
+    return {
+        paymentUrl,
+        orderId
+    };
+}
 
-    /**
-     * Verify return URL từ VNPay
-     */
     verifyReturnUrl(vnp_Params) {
         const secureHash = vnp_Params['vnp_SecureHash'];
         
@@ -73,9 +79,6 @@ class VNPayService {
         return secureHash === signed;
     }
 
-    /**
-     * Verify IPN (callback từ VNPay server)
-     */
     verifyIpnCall(vnp_Params) {
         return this.verifyReturnUrl(vnp_Params);
     }
