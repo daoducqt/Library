@@ -6,13 +6,31 @@ const excecute = async (req, res) => {
         const user = req.user._id;
 
         const fines = await Fine.find({ userId: user })
-            .populate("loanId", "bookId borrowDate dueDate returnDate")
+            .populate({
+                path: "loanId",
+                select: "bookId borrowDate dueDate returnDate status",
+                populate: {
+                    path: "bookId",
+                    select: "title author coverId isbn"
+                }
+            })
             .sort({ createdAt: -1 });
+
+        // Thêm coverUrl cho sách
+        const finesWithBookInfo = fines.map(fine => {
+            const fineObj = fine.toObject();
+            if (fineObj.loanId?.bookId) {
+                fineObj.loanId.bookId.coverUrl = fineObj.loanId.bookId.coverId
+                    ? `https://covers.openlibrary.org/b/id/${fineObj.loanId.bookId.coverId}-L.jpg`
+                    : null;
+            }
+            return fineObj;
+        });
 
         return res.status(StatusCodes.OK).send({
             status: StatusCodes.OK,
-            message: "lấy danh sách phạt thành công",
-            data: fines,
+            message: "Lấy danh sách phạt thành công",
+            data: finesWithBookInfo,
         });
 
     } catch (error) {
