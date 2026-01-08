@@ -500,7 +500,14 @@ export default function BooksPage() {
   // Get book cover image
   const getBookCover = (book: BookType): string => {
     if (book.image) {
-      return `${process.env.NEXT_PUBLIC_API_URL}/${book.image}`;
+      // Remove leading slash from book.image if it exists to avoid double slashes
+      const imagePath = book.image.startsWith("/")
+        ? book.image
+        : `/${book.image}`;
+      const baseUrl =
+        process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
+        "http://localhost:3003";
+      return `${baseUrl}${imagePath}`;
     }
     if (book.coverUrl) {
       return book.coverUrl;
@@ -508,7 +515,8 @@ export default function BooksPage() {
     if (book.coverId) {
       return `https://covers.openlibrary.org/b/id/${book.coverId}-M.jpg`;
     }
-    return "/placeholder-book.png";
+    // Return a data URL placeholder instead of file path
+    return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='0 0 200 300'%3E%3Crect fill='%23f3f4f6' width='200' height='300'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='16' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
   };
 
   if (loading) {
@@ -613,7 +621,7 @@ export default function BooksPage() {
                           className="w-12 h-16 object-cover rounded-lg shadow-sm bg-gray-100"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src =
-                              "/placeholder-book.png";
+                              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='0 0 200 300'%3E%3Crect fill='%23f3f4f6' width='200' height='300'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='16' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
                           }}
                         />
                         <div>
@@ -688,15 +696,19 @@ export default function BooksPage() {
                           disabled={actionLoading}
                           className={`p-2 rounded-lg transition-colors ${
                             book.available
-                              ? "text-orange-600 hover:bg-orange-50"
-                              : "text-green-600 hover:bg-green-50"
+                              ? "text-green-600 hover:bg-green-50"
+                              : "text-orange-600 hover:bg-orange-50"
                           }`}
-                          title={book.available ? "Vô hiệu hóa" : "Kích hoạt"}
+                          title={
+                            book.available
+                              ? "Đang kích hoạt"
+                              : "Đang vô hiệu hóa"
+                          }
                         >
                           {book.available ? (
-                            <EyeOff size={18} />
-                          ) : (
                             <Eye size={18} />
+                          ) : (
+                            <EyeOff size={18} />
                           )}
                         </button>
                       </div>

@@ -1,9 +1,12 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { getFavorites, FavoriteItem } from "@/service/favorite/getFavorites";
+import { removeFavorite } from "@/service/favorite/removeFavorite";
 
 interface Book {
-  id: number;
+  _id: string;
+  favoriteId: string;
   title: string;
   author: string;
   coverImage: string;
@@ -18,95 +21,62 @@ export default function MyBooksPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("recent");
+  const [favoriteBooks, setFavoriteBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Sample favorite books data
-  const [favoriteBooks, setFavoriteBooks] = useState<Book[]>([
-    {
-      id: 1,
-      title: "Dune",
-      author: "Frank Herbert",
-      coverImage:
-        "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400",
-      category: "Khoa học viễn tưởng",
-      rating: 5,
-      addedDate: "2024-11-20",
-      status: "borrowed",
-      description:
-        "Một tác phẩm kinh điển về khoa học viễn tưởng, kể về hành tinh sa mạc Arrakis và gia tộc Atreides.",
-    },
-    {
-      id: 2,
-      title: "The Hobbit",
-      author: "J.R.R. Tolkien",
-      coverImage:
-        "https://images.unsplash.com/photo-1621351183012-e2f9972dd9bf?w=400",
-      category: "Giả tưởng",
-      rating: 5,
-      addedDate: "2024-11-15",
-      status: "reading",
-      description:
-        "Cuộc phiêu lưu của Bilbo Baggins cùng với Gandalf và đoàn lùn đến núi Lonely.",
-    },
-    {
-      id: 3,
-      title: "1984",
-      author: "George Orwell",
-      coverImage:
-        "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400",
-      category: "Tiểu thuyết",
-      rating: 4,
-      addedDate: "2024-10-28",
-      status: "available",
-      description:
-        "Tác phẩm dystopia kinh điển về một xã hội toàn trị được giám sát bởi Big Brother.",
-    },
-    {
-      id: 4,
-      title: "The Great Gatsby",
-      author: "F. Scott Fitzgerald",
-      coverImage:
-        "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400",
-      category: "Văn học",
-      rating: 5,
-      addedDate: "2024-10-12",
-      status: "available",
-      description:
-        "Câu chuyện về Jay Gatsby và tình yêu của anh ta với Daisy Buchanan trong những năm 1920.",
-    },
-    {
-      id: 5,
-      title: "To Kill a Mockingbird",
-      author: "Harper Lee",
-      coverImage:
-        "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400",
-      category: "Văn học",
-      rating: 5,
-      addedDate: "2024-09-30",
-      status: "available",
-      description:
-        "Một câu chuyện cảm động về công lý, phân biệt chủng tộc và đạo đức qua con mắt của Scout Finch.",
-    },
-    {
-      id: 6,
-      title: "Harry Potter và Hòn đá Phù thủy",
-      author: "J.K. Rowling",
-      coverImage:
-        "https://images.unsplash.com/photo-1551029506-0807df4e2031?w=400",
-      category: "Giả tưởng",
-      rating: 5,
-      addedDate: "2024-09-15",
-      status: "available",
-      description:
-        "Cuộc phiêu lưu đầu tiên của cậu bé phù thủy Harry Potter tại trường Hogwarts.",
-    },
-  ]);
+  // Fetch favorites from API
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getFavorites();
+        if (response?.data?.favorites) {
+          const books: Book[] = response.data.favorites.map(
+            (fav: FavoriteItem) => {
+              const bookData = fav.bookId as Record<string, unknown>;
+              const categoryData = bookData.categoryId as {
+                _id?: string;
+                name?: string;
+              } | null;
+              return {
+                _id: bookData._id as string,
+                favoriteId: fav._id,
+                title: (bookData.title as string) || "Không có tiêu đề",
+                author: (bookData.author as string) || "Không rõ tác giả",
+                coverImage:
+                  (bookData.coverUrl as string) ||
+                  "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400",
+                category: categoryData?.name || "Chưa phân loại",
+                rating: (bookData.rating as number) || 5,
+                addedDate: fav.createdAt,
+                status:
+                  (bookData.availableCopies as number) > 0
+                    ? "available"
+                    : "borrowed",
+                description:
+                  (bookData.description as string) || "Không có mô tả",
+              };
+            }
+          );
+          setFavoriteBooks(books);
+        }
+      } catch (err) {
+        console.error("Error fetching favorites:", err);
+        setError("Không thể tải danh sách yêu thích. Vui lòng thử lại sau.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchFavorites();
+  }, []);
+
+  // Get unique categories from favorite books
   const categories = [
     "all",
-    "Khoa học viễn tưởng",
-    "Giả tưởng",
-    "Tiểu thuyết",
-    "Văn học",
+    ...Array.from(new Set(favoriteBooks.map((book) => book.category))),
   ];
 
   const filteredBooks = favoriteBooks
@@ -126,8 +96,17 @@ export default function MyBooksPage() {
       return 0;
     });
 
-  const handleRemoveFromFavorites = (bookId: number) => {
-    setFavoriteBooks(favoriteBooks.filter((book) => book.id !== bookId));
+  const handleRemoveFromFavorites = async (favoriteId: string) => {
+    try {
+      const response = await removeFavorite(favoriteId);
+      if (response?.success) {
+        setFavoriteBooks(
+          favoriteBooks.filter((book) => book.favoriteId !== favoriteId)
+        );
+      }
+    } catch (err) {
+      console.error("Error removing favorite:", err);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -155,7 +134,6 @@ export default function MyBooksPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
@@ -172,11 +150,17 @@ export default function MyBooksPage() {
                 Sách yêu thích
               </h1>
               <p className="text-gray-600 mt-2">
-                Bạn đang có{" "}
-                <span className="font-bold text-pink-600">
-                  {favoriteBooks.length}
-                </span>{" "}
-                cuốn sách trong danh sách yêu thích
+                {loading ? (
+                  "Đang tải..."
+                ) : (
+                  <>
+                    Bạn đang có{" "}
+                    <span className="font-bold text-pink-600">
+                      {favoriteBooks.length}
+                    </span>{" "}
+                    cuốn sách trong danh sách yêu thích
+                  </>
+                )}
               </p>
             </div>
 
@@ -295,7 +279,32 @@ export default function MyBooksPage() {
         </div>
 
         {/* Books Display */}
-        {filteredBooks.length === 0 ? (
+        {loading ? (
+          <div className="bg-white rounded-xl shadow-lg p-16 text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-pink-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Đang tải danh sách yêu thích...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-white rounded-xl shadow-lg p-16 text-center">
+            <svg
+              className="w-24 h-24 mx-auto text-red-300 mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Có lỗi xảy ra
+            </h3>
+            <p className="text-gray-600 mb-6">{error}</p>
+          </div>
+        ) : filteredBooks.length === 0 ? (
           <div className="bg-white rounded-xl shadow-lg p-16 text-center">
             <svg
               className="w-24 h-24 mx-auto text-gray-300 mb-4"
@@ -340,7 +349,7 @@ export default function MyBooksPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredBooks.map((book) => (
               <div
-                key={book.id}
+                key={book._id}
                 className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 group"
               >
                 <div className="relative h-64 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
@@ -351,7 +360,7 @@ export default function MyBooksPage() {
                   />
                   <div className="absolute top-3 right-3">
                     <button
-                      onClick={() => handleRemoveFromFavorites(book.id)}
+                      onClick={() => handleRemoveFromFavorites(book.favoriteId)}
                       className="bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-red-500 hover:text-white transition-all shadow-lg group/btn"
                       title="Xóa khỏi yêu thích"
                     >
@@ -404,7 +413,7 @@ export default function MyBooksPage() {
                   </p>
                   <div className="flex gap-2">
                     <Link
-                      href={`/detail/${book.id}`}
+                      href={`/detail/${book._id}`}
                       className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all text-center"
                     >
                       Chi tiết
@@ -423,7 +432,7 @@ export default function MyBooksPage() {
           <div className="space-y-4">
             {filteredBooks.map((book) => (
               <div
-                key={book.id}
+                key={book._id}
                 className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all group"
               >
                 <div className="flex gap-6 p-6">
@@ -450,7 +459,9 @@ export default function MyBooksPage() {
                         </div>
                       </div>
                       <button
-                        onClick={() => handleRemoveFromFavorites(book.id)}
+                        onClick={() =>
+                          handleRemoveFromFavorites(book.favoriteId)
+                        }
                         className="p-2 hover:bg-red-50 rounded-full transition-all group/btn"
                         title="Xóa khỏi yêu thích"
                       >
@@ -497,7 +508,7 @@ export default function MyBooksPage() {
 
                     <div className="flex gap-3">
                       <Link
-                        href={`/detail/${book.id}`}
+                        href={`/detail/${book._id}`}
                         className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all shadow-md hover:shadow-lg flex items-center gap-2"
                       >
                         <svg

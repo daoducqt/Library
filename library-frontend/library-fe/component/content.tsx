@@ -10,13 +10,18 @@ import {
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getTopBooks } from "@/service/books/top10books";
+import { addFavorite } from "@/service/favorite/addFavorite";
+import { getFavorites, FavoriteItem } from "@/service/favorite/getFavorites";
+import { removeFavorite } from "@/service/favorite/removeFavorite";
 
 /* ──────────────────────  Types  ────────────────────── */
 interface Book {
   id: string;
   title: string;
   author: string;
-  coverUrl: string;
+  image?: string;
+  coverUrl?: string;
+  coverId?: number;
   publishYear?: number;
   editionCount?: number;
   subjects?: string[];
@@ -90,11 +95,111 @@ export default function MainContent({
 }: MainContentProps) {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = React.useState<string>("all");
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
+
+  const getBookCover = (book: Books): string => {
+    if (book.image) {
+      // Remove leading slash from book.image if it exists to avoid double slashes
+      const imagePath = book.image.startsWith("/")
+        ? book.image
+        : `/${book.image}`;
+      const baseUrl =
+        process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
+        "http://localhost:3003";
+      return `${baseUrl}${imagePath}`;
+    }
+    if (book.coverUrl) {
+      return book.coverUrl;
+    }
+    if (book.cover_id) {
+      return `https://covers.openlibrary.org/b/id/${book.cover_id}-M.jpg`;
+    }
+    // Return a data URL placeholder instead of file path
+    return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='0 0 200 300'%3E%3Crect fill='%23f3f4f6' width='200' height='300'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='16' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
+  };
 
   const handleBookClick = (bookId: string) => {
     router.push(`/detail/${bookId}`);
   };
 
+  // Handle favorite toggle
+  const handleFavoriteClick = async (e: React.MouseEvent, bookId: string) => {
+    e.stopPropagation(); // Prevent triggering book click
+
+    try {
+      const isFavorite = favorites.some((fav) => fav.bookId._id === bookId);
+
+      if (isFavorite) {
+        // Remove from favorites - update UI immediately
+        const favoriteItem = favorites.find((fav) => fav.bookId._id === bookId);
+        if (favoriteItem) {
+          // Update UI immediately
+          setFavorites((prev) =>
+            prev.filter((fav) => fav.bookId._id !== bookId)
+          );
+          // Then call API only if it's not a temporary favorite
+          if (!favoriteItem._id.startsWith("temp-")) {
+            await removeFavorite(favoriteItem._id);
+          }
+        }
+      } else {
+        // Add to favorites - update UI immediately
+        const book = filteredBooks.find((b: Books) => b._id === bookId);
+        if (book) {
+          // Create temporary favorite item for immediate UI update
+          const tempFavorite: FavoriteItem = {
+            _id: `temp-${bookId}`, // Temporary ID
+            userId: "", // Will be filled by server
+            bookId: {
+              _id: book._id,
+              title: book.title,
+              authors: book.authors,
+              coverUrl: getBookCover(book),
+              first_publish_year: book.first_publish_year,
+              availability: book.availability,
+            },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+
+          // Update UI immediately
+          setFavorites((prev) => [...prev, tempFavorite]);
+
+          // Then call API and refresh to get accurate data
+          const response = await addFavorite(bookId);
+          if (response?.success) {
+            // Refresh to get the real favorite item from server
+            await fetchFavorites();
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      // On error, refresh to ensure UI is in sync with server
+      await fetchFavorites();
+    }
+  };
+
+  // Check if book is favorite
+  const isFavoriteBook = (bookId: string) => {
+    return favorites.some((fav) => fav.bookId._id === bookId);
+  };
+  // Fetch favorites
+  const fetchFavorites = async () => {
+    try {
+      setFavoritesLoading(true);
+      const response = await getFavorites();
+      if (response?.data?.favorites) {
+        setFavorites(response.data.favorites);
+      }
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+    } finally {
+      setFavoritesLoading(false);
+    }
+  };
+  console.log(favorites, "favorites");
   // Lấy tất cả sách (không giới hạn 30) và chỉ lấy sách có available: true
   const filteredBooks = React.useMemo(() => {
     const allBooks = books?.data || [];
@@ -145,7 +250,7 @@ export default function MainContent({
 
     return pages;
   };
-
+  console.log(filteredBooks, "filteredBooks");
   useEffect(() => {
     const fetchBooks = async () => {
       try {
@@ -163,6 +268,7 @@ export default function MainContent({
     };
 
     fetchBooks();
+    fetchFavorites(); // Load favorites on mount
   }, []);
   console.log("Top Books:", topBooks);
   return (
@@ -312,15 +418,40 @@ export default function MainContent({
                     <div className="absolute top-0 left-0 w-6 h-6 border-t border-l border-gray-700/50"></div>
                     <div className="absolute top-0 right-0 w-6 h-6 border-t border-r border-gray-700/50"></div>
 
+                    {/* Favorite heart icon */}
+                    <button
+                      onClick={(e) => handleFavoriteClick(e, book._id)}
+                      className="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/60 backdrop-blur-sm border border-gray-700/50 hover:bg-black/80 hover:border-gray-500 transition-all duration-300 group/heart"
+                      aria-label={
+                        isFavoriteBook(book._id)
+                          ? "Remove from favorites"
+                          : "Add to favorites"
+                      }
+                    >
+                      <svg
+                        className={`w-5 h-5 transition-all duration-300 ${
+                          isFavoriteBook(book._id)
+                            ? "fill-red-500 text-red-500 scale-110"
+                            : "fill-none text-gray-400 group-hover/heart:text-red-400 group-hover/heart:scale-110"
+                        }`}
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                        />
+                      </svg>
+                    </button>
+
                     {/* Cover image with overlay */}
                     <div className="relative w-full aspect-[2/3] bg-cover bg-center overflow-hidden">
                       <div
                         className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
                         style={{
-                          backgroundImage: `url(${
-                            book.coverUrl ||
-                            "https://via.placeholder.com/300x450?text=No+Cover"
-                          })`,
+                          backgroundImage: `url(${getBookCover(book)})`,
                         }}
                       ></div>
                       {/* Dark vignette overlay */}

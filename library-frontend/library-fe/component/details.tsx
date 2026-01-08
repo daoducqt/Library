@@ -11,7 +11,9 @@ interface Author {
 }
 
 interface BookDetails {
-  coverUrl: string;
+  image?: string;
+  coverUrl?: string;
+  coverId?: number;
   title: string;
   authors: Author[];
   first_publish_year: number;
@@ -53,6 +55,27 @@ const BookDetailsPage: React.FC<BookDetailsProps> = ({ slug }) => {
   const [borrowDays, setBorrowDays] = useState(7);
   const [isBorrowing, setIsBorrowing] = useState(false);
   const router = useRouter();
+
+  const getBookCover = (book: BookDetails): string => {
+    if (book.image) {
+      // Remove leading slash from book.image if it exists to avoid double slashes
+      const imagePath = book.image.startsWith("/")
+        ? book.image
+        : `/${book.image}`;
+      const baseUrl =
+        process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
+        "http://localhost:3003";
+      return `${baseUrl}${imagePath}`;
+    }
+    if (book.coverUrl) {
+      return book.coverUrl;
+    }
+    if (book.coverId) {
+      return `https://covers.openlibrary.org/b/id/${book.coverId}-M.jpg`;
+    }
+    // Return a data URL placeholder instead of file path
+    return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='0 0 200 300'%3E%3Crect fill='%23f3f4f6' width='200' height='300'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='16' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
+  };
 
   useEffect(() => {
     setIsVisible(true);
@@ -234,7 +257,7 @@ const BookDetailsPage: React.FC<BookDetailsProps> = ({ slug }) => {
             }}
           >
             <img
-              src={books.coverUrl}
+              src={getBookCover(books)}
               alt={books.title}
               style={{
                 width: "100%",
