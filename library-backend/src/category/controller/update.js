@@ -9,10 +9,7 @@ const validate = Joi.object({
   name: Joi.string().trim(),
   viName: Joi.string().allow("", null).trim(),
   isActive: Joi.boolean(),
-  order: Joi.number().integer().min(0).messages({
-    "number.base": "Thứ tự phải là số",
-    "number.min": "Thứ tự phải >= 0",
-  }),
+  // Bỏ order - không cho sửa
 });
 
 const excecute = async (req, res) => {
@@ -56,6 +53,9 @@ const excecute = async (req, res) => {
         remove: /[*+~.()'"!:@]/g 
       });
     }
+
+    // Xóa order khỏi req.body nếu có (không cho update order)
+    delete req.body.order;
 
     // Update category
     const updated = await Category.findByIdAndUpdate(id, req.body, { new: true });
