@@ -22,6 +22,7 @@ export interface Availability {
 }
 
 export interface Books {
+  image:string;
   available: boolean;
   _id: string;
   coverUrl : string;

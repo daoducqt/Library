@@ -8,7 +8,7 @@ import { getListBooks } from "@/service/books/getListBooks";
 export default function HomePage() {
   const [books, setBooks] = useState<Books[]>([]);
   const [books2, setBooks2] = useState<GetBooksResponse | null>(null);
-  const [images] = useState<string[]>([]);
+  const [images, setImages] = useState<string[]>([]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -20,6 +20,14 @@ export default function HomePage() {
     try {
       const data = await getListBooks({ page, limit, search });
       setBooks2(data ?? null);
+
+      // Lấy 5 ảnh bìa sách ngẫu nhiên cho slider
+      if (data?.data && data.data.length > 0) {
+        const booksWithCovers = data.data.filter((book) => book.coverUrl);
+        const shuffled = [...booksWithCovers].sort(() => 0.5 - Math.random());
+        const randomCovers = shuffled.slice(0, 8).map((book) => book.coverUrl);
+        setImages(randomCovers);
+      }
     } catch (error) {
       console.error("Error fetching books:", error);
     } finally {
