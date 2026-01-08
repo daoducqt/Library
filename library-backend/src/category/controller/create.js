@@ -15,12 +15,6 @@ const validate = Joi.object({
     viName: Joi.string().allow(null, "").trim().messages({
     "string.base": "Tên tiếng việt phải là chuỗi",
     }),
-    order: Joi.number().integer().min(0).messages({
-    "number.base": "Thứ tự phải là số",
-    "number.integer": "Thứ tự phải là số nguyên",
-    "number.min": "Thứ tự phải lớn hơn hoặc bằng 0",
-    
-    }),
 });
 
 const excecute = async (req, res) => {
@@ -32,6 +26,9 @@ const excecute = async (req, res) => {
             message: "Category đã tồn tại",
         });
     }
+
+        const maxOrderCategory = await Category.findOne().sort({ order: -1 }).select('order');
+        req.body.order = maxOrderCategory ? maxOrderCategory.order + 1 : 1;
 
         const category = await Category.create(req.body);
         return res.status(StatusCodes.CREATED).send({
@@ -48,7 +45,4 @@ const excecute = async (req, res) => {
     }
 };
 
-export default {
-    validate,
-    excecute,
-};
+export default { validate, excecute };
