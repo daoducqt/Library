@@ -11,7 +11,7 @@ const FineSchema = new mongoose.Schema(
 
         paymentMethod: { 
             type: String, 
-            enum: ["CASH", "QR_CODE"], 
+            enum: ["CASH", "QR_CODE", "BANK_TRANSFER"], 
             default: null
         },
         
@@ -29,6 +29,15 @@ const FineSchema = new mongoose.Schema(
             default: null
         },
         zalopayTransactionNo: {
+            type: String,
+            default: null
+        },
+         vietqrTransferContent: {
+            type: String,
+            default: null,
+            index: true
+        },
+        vietqrTransactionId: {
             type: String,
             default: null
         },
