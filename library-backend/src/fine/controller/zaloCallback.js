@@ -53,7 +53,7 @@ const excecute = async (req, res) => {
             userId: fine.userId._id,
             title: "Thanh toán phí phạt thành công",
             message: `Bạn đã thanh toán thành công phí phạt ${fine.amount.toLocaleString('vi-VN')} VNĐ qua ZaloPay.`,
-            type: "payment",
+            type: "FINE",
             isRead: false
         });
 
