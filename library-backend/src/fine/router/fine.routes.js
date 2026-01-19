@@ -39,7 +39,7 @@ router.patch("/pay/:fineId", userAuth, payFine.excecute);
 // router.get("/query-zalo-order/:fineId", userAuth, queryZaloOrder.excecute);
 
 // vietqr
-router.post("/create-viet-qr/:fineId", userAuth, createVietQR.excecute);
+router.post("/create-viet-qr/:fineId", adminAuth, createVietQR.excecute);
 router.post("/vietqr-webhook", vietqrwebhook.excecute);
 
 router.post("/create-test-fine", userAuth, createTestFine.excecute);
