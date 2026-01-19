@@ -13,6 +13,7 @@ import zaloCallback from "../controller/zaloCallback.js";
 import queryZaloOrder from "../controller/queryzaloOder.js";
 import createVietQR from "../controller/createVietQR.js";
 import vietqrwebhook from "../controller/vietqrwebhook.js";
+import createTestFine from "../controller/createTestFine.js";
 
 const router = express.Router();
 
@@ -46,5 +47,7 @@ router.get("/query-zalo-order/:fineId", userAuth, queryZaloOrder.excecute);
 // vietqr
 router.post("/create-viet-qr/:fineId", userAuth, createVietQR.excecute);
 router.post("/vietqr-webhook", vietqrwebhook.excecute);
+
+router.post("/create-test-fine", userAuth, createTestFine.excecute);
 
 export default router;

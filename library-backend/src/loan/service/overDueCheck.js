@@ -24,7 +24,7 @@ export const checkDueLoans = async () => {
         console.log(`Found ${dueSoonLoans.length} loans due soon`);
 
         for (const loan of dueSoonLoans) {
-            const daysLeft = Math.ceil((loan.dueDate - now) / 86400000);
+            const daysLeft = Math.ceil((loan.dueDate - now) / 1000); 
             
             // Chỉ gửi notification nếu còn 1-3 ngày
             if (daysLeft > 0 && daysLeft <= 3) {
