@@ -21,6 +21,7 @@ import pendingloans from "../controller/pendingloans.js";
 import searchUserPending from "../controller/searchUserPending.js";
 import getOnePendingLoan from "../controller/getOnePendingLoan.js";
 import getLoanBorrow from "../controller/getLoanBorrow.js";
+import createTestLoan from "../controller/createloan.js";
 
 
 const router = express.Router();
@@ -48,6 +49,8 @@ router.post("/:loanId/return",
     adminAuth,
     returnBook.excecute
 );
+
+router.post("/create-test-loan",adminAuth,createTestLoan.excecute);
 
 // not authenticated user routes
 // 📌 Lấy top 10 sách được mượn nhiều nhất trong khoảng thời gian
