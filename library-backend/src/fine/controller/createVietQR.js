@@ -1,10 +1,8 @@
-// d:\Library\library-backend\src\fine\controller\createVietQR.js
 import mongoose from "mongoose";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import Fine from "../model/fine.js";
 import { PayOS } from "@payos/node";
 
-// Khởi tạo PayOS
 const payOS = new PayOS({
     clientId: process.env.PAYOS_CLIENT_ID,
     apiKey: process.env.PAYOS_API_KEY,
@@ -14,7 +12,7 @@ const payOS = new PayOS({
 const excecute = async (req, res) => {
     try {
         const { fineId } = req.params;
-        const userId = req.user._id;
+        //  XÓA: const userId = req.user._id;
 
         if (!mongoose.Types.ObjectId.isValid(fineId)) {
             return res.status(StatusCodes.BAD_REQUEST).send({
@@ -31,12 +29,13 @@ const excecute = async (req, res) => {
             });
         }
 
-        if (fine.userId.toString() !== userId.toString()) {
-            return res.status(StatusCodes.FORBIDDEN).send({
-                status: StatusCodes.FORBIDDEN,
-                message: "Bạn không có quyền thanh toán đơn phạt này",
-            });
-        }
+        //  XÓA ĐOẠN CHECK PERMISSION:
+        // if (fine.userId.toString() !== userId.toString()) {
+        //     return res.status(StatusCodes.FORBIDDEN).send({
+        //         status: StatusCodes.FORBIDDEN,
+        //         message: "Bạn không có quyền thanh toán đơn phạt này",
+        //     });
+        // }
 
         if (fine.isPayed) {
             return res.status(StatusCodes.BAD_REQUEST).send({
@@ -58,7 +57,7 @@ const excecute = async (req, res) => {
         console.log('Description:', transferContent);
         console.log('===============================================================');
 
-        // ✅ ĐÚNG: Gọi payOS.paymentRequests.create()
+        // Tạo payment link qua PayOS
         const paymentData = {
             orderCode: orderCode,
             amount: fine.amount,
