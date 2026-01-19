@@ -17,21 +17,6 @@ const FineSchema = new mongoose.Schema(
         
         adminNote: { type: String, default: "" },
         
-        // VNPay fields
-        vnpayOrderId: { type: String, default: null, index: true },
-        vnpayTransactionNo: { type: String, default: null },
-        vnpayReponseCode: { type: String, default: null },
-        vnpayBankCode: { type: String, default: null },
-
-        // Thêm vào schema
-        zalopayTransId: {
-            type: String,
-            default: null
-        },
-        zalopayTransactionNo: {
-            type: String,
-            default: null
-        },
          vietqrTransferContent: {
             type: String,
             default: null,

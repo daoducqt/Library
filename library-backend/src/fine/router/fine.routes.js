@@ -5,12 +5,6 @@ import getAllFines from "../controller/getAllFines.js";
 import getMyFines from "../controller/getMyFines.js";
 import payFine from "../controller/payFine.js";
 import confirmPay from "../controller/confirmPay.js";
-// import createVnpayPayment from "../controller/createVnpayPayment.js";
-// import vnpayReturn from "../controller/vnpayReturn.js";
-// import vnpayIPN from "../controller/vnpayIPN.js";
-import createZaloQR from "../controller/createZaloQR.js";
-import zaloCallback from "../controller/zaloCallback.js";
-import queryZaloOrder from "../controller/queryzaloOder.js";
 import createVietQR from "../controller/createVietQR.js";
 import vietqrwebhook from "../controller/vietqrwebhook.js";
 import createTestFine from "../controller/createTestFine.js";
@@ -40,9 +34,9 @@ router.patch("/pay/:fineId", userAuth, payFine.excecute);
 // router.get("/vnpay-ipn", vnpayIPN.excecute);
 // router.post("/vnpay-ipn", vnpayIPN.excecute);
 
-router.post("/create-zalo-qr/:fineId", userAuth, createZaloQR.excecute);
-router.post("/zalopay-callback", zaloCallback.excecute);
-router.get("/query-zalo-order/:fineId", userAuth, queryZaloOrder.excecute);
+// router.post("/create-zalo-qr/:fineId", userAuth, createZaloQR.excecute);
+// router.post("/zalopay-callback", zaloCallback.excecute);
+// router.get("/query-zalo-order/:fineId", userAuth, queryZaloOrder.excecute);
 
 // vietqr
 router.post("/create-viet-qr/:fineId", userAuth, createVietQR.excecute);
