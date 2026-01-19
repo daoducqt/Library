@@ -71,3 +71,4 @@ cron.schedule("0 * * * *", autoUpdateOverdue); // mỗi giờ quét 1 lần
 checkDueLoans();
 setInterval(cleanupExpiredPickups, 60 * 60 * 1000);
 autoGenerateFine();
+setInterval(autoGenerateFine, 5 * 60 * 1000); // Lặp lại mỗi 5 phút

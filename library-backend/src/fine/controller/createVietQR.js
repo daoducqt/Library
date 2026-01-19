@@ -2,6 +2,14 @@
 import mongoose from "mongoose";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import Fine from "../model/fine.js";
+import { PayOS } from "@payos/node";
+
+// Khởi tạo PayOS
+const payOS = new PayOS({
+    clientId: process.env.PAYOS_CLIENT_ID,
+    apiKey: process.env.PAYOS_API_KEY,
+    checksumKey: process.env.PAYOS_CHECKSUM_KEY
+});
 
 const excecute = async (req, res) => {
     try {
@@ -37,27 +45,40 @@ const excecute = async (req, res) => {
             });
         }
 
-        // Thông tin ngân hàng (lấy từ .env hoặc hardcode)
-        const BANK_ID = process.env.BANK_ID || "970422"; // MB Bank
-        const ACCOUNT_NO = process.env.BANK_ACCOUNT_NO || "0123456789";
-        const ACCOUNT_NAME = process.env.BANK_ACCOUNT_NAME || "LIBRARY SYSTEM";
+        // Tạo orderCode unique (số nguyên dương, tối đa 9 số)
+        const orderCode = Number(String(Date.now()).slice(-9));
         
-        // Tạo nội dung chuyển khoản có mã unique
+        // Tạo nội dung chuyển khoản
         const transferContent = `PHIPHAT ${fineId.slice(-8)}`;
-        
-        // Lưu transferContent vào fine để verify sau
+
+        console.log('==================== CREATING PAYOS PAYMENT ====================');
+        console.log('Fine ID:', fineId);
+        console.log('Order Code:', orderCode);
+        console.log('Amount:', fine.amount);
+        console.log('Description:', transferContent);
+        console.log('===============================================================');
+
+        // ✅ ĐÚNG: Gọi payOS.paymentRequests.create()
+        const paymentData = {
+            orderCode: orderCode,
+            amount: fine.amount,
+            description: transferContent,
+            returnUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment/success`,
+            cancelUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment/cancel`,
+        };
+
+        const paymentLinkResponse = await payOS.paymentRequests.create(paymentData);
+
+        // Lưu thông tin vào fine
         fine.vietqrTransferContent = transferContent;
+        fine.payosOrderCode = orderCode;
+        fine.payosPaymentLinkId = paymentLinkResponse.paymentLinkId;
         await fine.save();
 
-        // Tạo VietQR URL
-        const qrUrl = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.png?amount=${fine.amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`;
-
-        console.log('==================== VIETQR CREATED ====================');
-        console.log('Fine ID:', fineId);
-        console.log('Amount:', fine.amount);
-        console.log('Transfer Content:', transferContent);
-        console.log('QR URL:', qrUrl);
-        console.log('=======================================================');
+        console.log('✅ PayOS Payment Created Successfully');
+        console.log('Payment Link ID:', paymentLinkResponse.paymentLinkId);
+        console.log('Checkout URL:', paymentLinkResponse.checkoutUrl);
+        console.log('QR Code:', paymentLinkResponse.qrCode);
 
         return res.status(StatusCodes.OK).send({
             status: StatusCodes.OK,
@@ -67,25 +88,27 @@ const excecute = async (req, res) => {
                     _id: fine._id,
                     amount: fine.amount,
                     daysLate: fine.daysLate,
-                    reason: fine.reason,
                     createdAt: fine.createdAt,
                 },
                 payment: {
-                    qr_url: qrUrl,
-                    bank_id: BANK_ID,
-                    account_no: ACCOUNT_NO,
-                    account_name: ACCOUNT_NAME,
+                    qr_url: paymentLinkResponse.qrCode,
+                    checkout_url: paymentLinkResponse.checkoutUrl,
+                    order_code: orderCode,
+                    payment_link_id: paymentLinkResponse.paymentLinkId,
+                    account_number: paymentLinkResponse.accountNumber,
+                    account_name: paymentLinkResponse.accountName,
                     amount: fine.amount,
                     transfer_content: transferContent,
-                    note: "Vui lòng chuyển khoản ĐÚNG nội dung để hệ thống tự động xác nhận"
+                    note: "Quét mã QR hoặc truy cập link để thanh toán"
                 },
             },
         });
     } catch (error) {
         console.error("createVietQR error:", error);
+        console.error("Error details:", error.response?.data || error.message);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
             status: StatusCodes.INTERNAL_SERVER_ERROR,
-            message: "Lỗi máy chủ, vui lòng thử lại sau",
+            message: error.response?.data?.message || error.message || "Lỗi máy chủ, vui lòng thử lại sau",
         });
     }
 };
