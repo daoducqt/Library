@@ -1,26 +1,41 @@
-// d:\Library\library-backend\src\fine\controller\vietqrwebhook.js
-import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import Fine from "../model/fine.js";
 import Notification from "../../notification/model/notification.js";
 
 const excecute = async (req, res) => {
     try {
-        console.log('==================== CASSO WEBHOOK ====================');
+        console.log('==================== WEBHOOK RECEIVED ====================');
         console.log('Full Request Body:', JSON.stringify(req.body, null, 2));
-        console.log('=======================================================');
+        console.log('=========================================================');
 
-        // Casso gửi data trong req.body.data (array of transactions)
         let transactions = [];
         
-        if (req.body.data && Array.isArray(req.body.data)) {
+        // ✅ SUPPORT PAYOS FORMAT
+        if (req.body.data && !Array.isArray(req.body.data)) {
+            // PayOS format: { data: { orderCode, amount, description, ... } }
+            const payosData = req.body.data;
+            transactions = [{
+                description: payosData.description || payosData.desc,
+                amount: payosData.amount,
+                id: payosData.orderCode || payosData.transactionId || payosData.id,
+                accountNumber: payosData.accountNumber,
+                reference: payosData.reference
+            }];
+            console.log('✅ Detected PayOS format');
+        }
+        // SUPPORT CASSO FORMAT (giữ lại để backward compatible)
+        else if (req.body.data && Array.isArray(req.body.data)) {
             transactions = req.body.data;
+            console.log('✅ Detected Casso array format');
         } else if (Array.isArray(req.body)) {
             transactions = req.body;
+            console.log('✅ Detected array format');
         } else if (req.body.transactions) {
             transactions = req.body.transactions;
+            console.log('✅ Detected transactions format');
         } else {
-            // Nếu là single transaction object
+            // Single transaction object
             transactions = [req.body];
+            console.log('✅ Detected single object format');
         }
 
         console.log('Parsed transactions:', transactions.length);
@@ -31,13 +46,14 @@ const excecute = async (req, res) => {
         }
 
         for (const transaction of transactions) {
-            const { description, amount, id, tid } = transaction;
-            const transactionId = id || tid;
+            const { description, amount, id, tid, reference, accountNumber } = transaction;
+            const transactionId = id || tid || reference;
 
             console.log('Processing transaction:');
             console.log('- Description:', description);
             console.log('- Amount:', amount);
             console.log('- Transaction ID:', transactionId);
+            console.log('- Account Number:', accountNumber);
 
             if (!description) {
                 console.log('Skip - no description');
@@ -81,7 +97,7 @@ const excecute = async (req, res) => {
             fine.paymentMethod = "BANK_TRANSFER";
             fine.paidAt = new Date();
             fine.vietqrTransactionId = transactionId;
-            fine.adminNote = `Thanh toán Casso thành công lúc ${new Date().toLocaleString("vi-VN")}`;
+            fine.adminNote = `Thanh toán PayOS thành công lúc ${new Date().toLocaleString("vi-VN")}`;
             await fine.save();
 
             console.log('✅ Fine updated successfully');
@@ -100,7 +116,7 @@ const excecute = async (req, res) => {
 
         return res.status(200).json({ success: true });
     } catch (error) {
-        console.error("vietqrWebhook error:", error);
+        console.error("Webhook error:", error);
         console.error("Stack:", error.stack);
         return res.status(200).json({ success: false, error: error.message });
     }
