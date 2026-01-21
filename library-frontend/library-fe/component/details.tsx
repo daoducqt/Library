@@ -26,6 +26,7 @@ interface BookDetails {
   language: string[];
   type: "borrow" | "online";
   availableCopies: number;
+  pickCode?: string;
 }
 
 interface Comment {
@@ -52,6 +53,8 @@ const BookDetailsPage: React.FC<BookDetailsProps> = ({ slug }) => {
   const [books, setBooks] = useState<BookDetails | undefined>(undefined);
   const [showBorrowModal, setShowBorrowModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [borrowDays, setBorrowDays] = useState(7);
   const [isBorrowing, setIsBorrowing] = useState(false);
   const router = useRouter();
@@ -154,16 +157,22 @@ const BookDetailsPage: React.FC<BookDetailsProps> = ({ slug }) => {
     setIsBorrowing(true);
     try {
       const response = await borrowBooks(slug, borrowDays);
-
-      if (response?.data) {
-        setShowBorrowModal(false);
-        setShowSuccessModal(true);
-      }
+      // Nếu đến đây là thành công
+      setShowBorrowModal(false);
+      setShowSuccessModal(true);
     } catch (error: unknown) {
-      const err = error as AxiosError<{ message: string }>;
+      console.error("Borrow error:", error);
 
-      alert(err.response?.data?.message || "Có lỗi xảy ra khi mượn sách");
-      console.error("Borrow error:", err);
+      // Lấy message từ error - service đã throw Error với message
+      let message = "Có lỗi xảy ra khi mượn sách";
+
+      if (error instanceof Error) {
+        message = error.message;
+      }
+
+      setErrorMessage(message);
+      setShowBorrowModal(false);
+      setShowErrorModal(true);
     } finally {
       setIsBorrowing(false);
     }
@@ -1028,6 +1037,57 @@ const BookDetailsPage: React.FC<BookDetailsProps> = ({ slug }) => {
               <p style={{ marginBottom: "15px" }}>
                 🎊 <strong>Chúc mừng!</strong> Bạn đã mượn sách thành công!
               </p>
+
+              {/* Pick Code Display */}
+              {books?.pickCode && (
+                <div
+                  style={{
+                    margin: "25px 0",
+                    padding: "25px",
+                    backgroundColor: "rgba(255, 215, 0, 0.15)",
+                    borderRadius: "15px",
+                    border: "3px dashed #ffd700",
+                    boxShadow: "0 0 30px rgba(255, 215, 0, 0.3)",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: "1rem",
+                      color: "#ffd700",
+                      marginBottom: "15px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    🎫 MÃ NHẬN SÁCH CỦA BẠN
+                  </p>
+                  <div
+                    style={{
+                      fontSize: "2.5rem",
+                      fontWeight: "bold",
+                      color: "#ffd700",
+                      letterSpacing: "8px",
+                      textShadow: "0 0 20px rgba(255, 215, 0, 0.8)",
+                      padding: "15px",
+                      backgroundColor: "rgba(138, 43, 226, 0.3)",
+                      borderRadius: "10px",
+                      fontFamily: "monospace",
+                    }}
+                  >
+                    {books.pickCode}
+                  </div>
+                  <p
+                    style={{
+                      fontSize: "0.9rem",
+                      color: "#e6d5ff",
+                      marginTop: "15px",
+                    }}
+                  >
+                    📌 Vui lòng ghi nhớ hoặc chụp lại mã này để nhận sách tại
+                    quầy!
+                  </p>
+                </div>
+              )}
+
               <p style={{ color: "#b8a6d9", fontSize: "1.1rem" }}>
                 📚{" "}
                 <strong style={{ color: "#ffd700" }}>
@@ -1156,6 +1216,197 @@ const BookDetailsPage: React.FC<BookDetailsProps> = ({ slug }) => {
               }}
             >
               📚
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Modal */}
+      {showErrorModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.85)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1001,
+            backdropFilter: "blur(5px)",
+          }}
+        >
+          <div
+            className="magic-card"
+            style={{
+              width: "90%",
+              maxWidth: "600px",
+              padding: "50px 40px",
+              position: "relative",
+              animation: "fadeIn 0.5s ease-in-out, scaleIn 0.5s ease-in-out",
+              textAlign: "center",
+              background:
+                "linear-gradient(135deg, rgba(220, 38, 38, 0.2) 0%, rgba(153, 27, 27, 0.3) 100%)",
+              borderRadius: "20px",
+              border: "3px solid rgba(239, 68, 68, 0.5)",
+              boxShadow:
+                "0 0 50px rgba(220, 38, 38, 0.6), 0 0 100px rgba(239, 68, 68, 0.3)",
+            }}
+          >
+            {/* Error Icon with Animation */}
+            <div
+              style={{
+                fontSize: "6rem",
+                marginBottom: "30px",
+                animation: "shake 0.5s ease-in-out",
+              }}
+            >
+              ❌
+            </div>
+
+            {/* Error Title */}
+            <h2
+              style={{
+                fontSize: "2.5rem",
+                color: "#ef4444",
+                marginBottom: "20px",
+                fontWeight: "bold",
+                textShadow: "0 0 20px rgba(239, 68, 68, 0.5)",
+                letterSpacing: "2px",
+              }}
+            >
+              Không Thể Mượn Sách
+            </h2>
+
+            {/* Error Message */}
+            <div
+              style={{
+                fontSize: "1.2rem",
+                color: "#fecaca",
+                marginBottom: "25px",
+                lineHeight: "1.8",
+              }}
+            >
+              <p style={{ marginBottom: "15px" }}>{errorMessage}</p>
+            </div>
+
+            {/* Info Box */}
+            <div
+              style={{
+                padding: "20px",
+                backgroundColor: "rgba(220, 38, 38, 0.15)",
+                borderRadius: "15px",
+                marginBottom: "35px",
+                border: "2px solid rgba(239, 68, 68, 0.3)",
+              }}
+            >
+              <p
+                style={{
+                  color: "#fca5a5",
+                  fontSize: "1rem",
+                  lineHeight: "1.8",
+                  marginBottom: "10px",
+                }}
+              >
+                💡 <strong>Gợi ý:</strong>
+              </p>
+              <p
+                style={{
+                  color: "#fecaca",
+                  fontSize: "0.95rem",
+                  lineHeight: "1.6",
+                }}
+              >
+                Vui lòng kiểm tra lại trong <strong>Trang Cá Nhân</strong> để
+                xem danh sách sách bạn đang mượn.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div
+              style={{
+                display: "flex",
+                gap: "15px",
+                justifyContent: "center",
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                onClick={() => {
+                  setShowErrorModal(false);
+                  setErrorMessage("");
+                }}
+                style={{
+                  padding: "15px 35px",
+                  backgroundColor: "rgba(220, 38, 38, 0.3)",
+                  color: "#fecaca",
+                  border: "2px solid rgba(220, 38, 38, 0.6)",
+                  borderRadius: "30px",
+                  cursor: "pointer",
+                  fontSize: "1.1rem",
+                  fontWeight: "bold",
+                  transition: "all 0.3s ease",
+                  letterSpacing: "1px",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(220, 38, 38, 0.5)";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(220, 38, 38, 0.3)";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                ⬅️ Quay Lại
+              </button>
+              <button
+                onClick={() => router.push("/profile")}
+                className="magic-button"
+                style={{
+                  padding: "15px 35px",
+                  backgroundColor: "#dc2626",
+                  color: "white",
+                  border: "2px solid #ef4444",
+                  borderRadius: "30px",
+                  cursor: "pointer",
+                  fontSize: "1.1rem",
+                  fontWeight: "bold",
+                  letterSpacing: "1px",
+                  boxShadow: "0 0 20px rgba(220, 38, 38, 0.5)",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform =
+                    "translateY(-2px) scale(1.05)";
+                  e.currentTarget.style.boxShadow =
+                    "0 0 30px rgba(239, 68, 68, 0.6)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0) scale(1)";
+                  e.currentTarget.style.boxShadow =
+                    "0 0 20px rgba(220, 38, 38, 0.5)";
+                }}
+              >
+                👤 Xem Trang Cá Nhân
+              </button>
+            </div>
+
+            {/* Decorative Elements */}
+            <div
+              style={{
+                position: "absolute",
+                top: "-20px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                fontSize: "3rem",
+                animation: "float 3s ease-in-out infinite",
+              }}
+            >
+              🚫
             </div>
           </div>
         </div>

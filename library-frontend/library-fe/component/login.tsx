@@ -52,8 +52,16 @@ export default function Login() {
 
       // Lưu tokens và user info vào localStorage
       if (data?.status === 200 && data?.data) {
-        // Chỉ lưu user nếu cần
+        // Lưu user info
         localStorage.setItem("user", JSON.stringify(data.data.user));
+
+        // Lưu accessToken vào localStorage để Socket.IO có thể đọc
+        if (data.data.accessToken) {
+          localStorage.setItem("accessToken", data.data.accessToken);
+        }
+        if (data.data.refreshToken) {
+          localStorage.setItem("refreshToken", data.data.refreshToken);
+        }
 
         router.push("/");
       } else {
@@ -73,7 +81,7 @@ export default function Login() {
         };
         setError(
           error.response?.data?.message ||
-            "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."
+            "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.",
         );
       } else {
         setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
@@ -307,8 +315,8 @@ export default function Login() {
                       raw > len / 2
                         ? raw - len
                         : raw < -len / 2
-                        ? raw + len
-                        : raw;
+                          ? raw + len
+                          : raw;
                     const abs = Math.abs(offset);
                     const translateX = offset * 45;
                     const rotateY = offset * -20;

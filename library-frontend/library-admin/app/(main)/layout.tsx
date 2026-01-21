@@ -4,6 +4,7 @@ import Sidebar from "@/src/component/layout/Sidebar";
 import Header from "@/src/component/layout/Header";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ChatButton from "@/src/component/chat/ChatButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +44,7 @@ export default function RootLayout({
             <main className="flex-1 p-6 overflow-auto">{children}</main>
           </div>
         </div>
+        <ChatButton />
         <ToastContainer />
       </body>
     </html>

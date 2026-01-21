@@ -82,10 +82,10 @@ const excecute = async (req, res) => {
 
     // Optional: set refreshToken in httpOnly cookie
     res.cookie("accessToken", accessToken, {
-      httpOnly: true,
+      httpOnly: false, // Cho phép JS đọc để dùng cho Socket.IO
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 30 * 60 * 1000, 
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     res.cookie("refreshToken", refreshToken, {
@@ -101,8 +101,8 @@ const excecute = async (req, res) => {
       message: ReasonPhrases.OK || "Đăng nhập thành công",
       data: {
         user: userData,
-        // accessToken,
-        // refreshToken optional — nếu lưu cookie thì không cần gửi body
+        accessToken, // Trả về token để frontend lưu vào localStorage
+        refreshToken,
       },
     });
   } catch (error) {

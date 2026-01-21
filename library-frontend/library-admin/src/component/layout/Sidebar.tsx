@@ -62,11 +62,11 @@ const menuItems: MenuItem[] = [
     href: "/locations",
     icon: <MapPin size={20} />,
   },
-  {
-    name: "Nhập kho",
-    href: "/stock-in",
-    icon: <Package size={20} />,
-  },
+  // {
+  //   name: "Nhập kho",
+  //   href: "/stock-in",
+  //   icon: <Package size={20} />,
+  // },
   {
     name: "Thông báo",
     href: "/notifications",

@@ -38,6 +38,15 @@ export default function Login() {
         }
 
         localStorage.setItem("user", JSON.stringify(data.data.user));
+
+        // Lưu accessToken và refreshToken vào localStorage cho Socket.IO
+        if (data.data.accessToken) {
+          localStorage.setItem("accessToken", data.data.accessToken);
+        }
+        if (data.data.refreshToken) {
+          localStorage.setItem("refreshToken", data.data.refreshToken);
+        }
+
         router.push("/");
       } else {
         setError(data?.message || "Đăng nhập thất bại.");
@@ -55,7 +64,7 @@ export default function Login() {
         };
         setError(
           error.response?.data?.message ||
-            "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."
+            "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.",
         );
       } else {
         setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
