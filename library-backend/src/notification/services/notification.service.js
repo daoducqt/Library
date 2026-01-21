@@ -1,4 +1,5 @@
 import Notification from "../model/notification.js";
+import { emitNotification, emitNotificationToAdmins } from "../../socket/socket.js";
 
 /**
  * Tạo Notification mới
@@ -22,6 +23,10 @@ const createNotification = async (userId, title, message, options = {}) => {
             ...options,
         });
         const savedNotification = await newNotification.save();
+        
+        // Emit realtime notification to user
+        emitNotification(userId, savedNotification);
+        
         return savedNotification;
     } catch (err) {
         console.error("Create notification error:", err);
@@ -217,6 +222,12 @@ const notifyAllAdmins = async (title, message, options = {}) => {
         }));
         
         const result = await Notification.insertMany(notifications);
+        
+        // Emit realtime notification to all admins
+        result.forEach(notification => {
+            emitNotificationToAdmins(notification);
+        });
+        
         return result;
     } catch (err) {
         console.error("Notify all admins error:", err);

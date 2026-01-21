@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/component/header";
 import SnowfallEffect from "@/component/SnowfallEffect";
+import ChatButton from "@/component/chat/ChatButton";
 import { usePathname } from "next/navigation";
 
 const geistSans = Geist({
@@ -29,7 +30,7 @@ export default function RootLayout({
     window.dispatchEvent(
       new CustomEvent("header-search", {
         detail: { query },
-      })
+      }),
     );
   };
 
@@ -41,6 +42,7 @@ export default function RootLayout({
         <Header onSearch={handleHeaderSearch} />
         <SnowfallEffect />
         {children}
+        <ChatButton />
       </body>
     </html>
   );

@@ -12,11 +12,15 @@ import { checkDueLoans } from './src/loan/service/overDueCheck.js';
 import scheduleFineGenerationJob from './src/fine/services/cronjob.js';
 import { cleanupExpiredPickups } from './src/loan/service/cleanupExpiredCode.js';
 import autoGenerateFine from './src/fine/services/autoGenerateFine.js';
+import { initializeSocket } from './src/socket/socket.js';
 
 dotenv.config();
 
 const app = express();
 const server = createServer(app);
+
+// Initialize Socket.IO
+const io = initializeSocket(server);
 
 // biên dịch
 app.use(express.json());

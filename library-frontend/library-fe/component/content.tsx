@@ -183,7 +183,7 @@ export default function MainContent({
 
   // Check if book is favorite
   const isFavoriteBook = (bookId: string) => {
-    return favorites.some((fav) => fav.bookId._id === bookId);
+    return favorites.some((fav) => fav.bookId && fav.bookId._id === bookId);
   };
   // Fetch favorites
   const fetchFavorites = async () => {
@@ -606,6 +606,7 @@ export default function MainContent({
                     return (
                       <div
                         key={book.bookId}
+                        onClick={() => handleBookClick(book.bookId)}
                         className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-800/40 border border-transparent hover:border-gray-700 transition-all duration-300 cursor-pointer group"
                       >
                         {/* rank */}

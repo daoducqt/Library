@@ -1,6 +1,11 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import {
+  notificationApi,
+  type Notification as NotificationType,
+} from "@/service/notification/notification";
+import socketService from "@/service/chat/socketService";
 
 type Props = {
   onSearch?: (q: string) => void;
@@ -9,7 +14,163 @@ type Props = {
 export default function Header({ onSearch }: Props) {
   const [query, setQuery] = useState("");
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [notificationDropdownOpen, setNotificationDropdownOpen] =
+    useState(false);
+  const [notifications, setNotifications] = useState<NotificationType[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  // Fetch unread count
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const response = await notificationApi.getUnreadCount();
+      if (response?.data) {
+        setUnreadCount(response.data.unreadCount);
+      }
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+    }
+  }, []);
+
+  // Fetch notifications
+  const fetchNotifications = useCallback(async () => {
+    setIsLoadingNotifications(true);
+    try {
+      const response = await notificationApi.getNotifications();
+      if (response?.data) {
+        setNotifications(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  }, []);
+
+  // Mark as read
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await notificationApi.markAsRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)),
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
+
+  // Mark all as read
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationApi.markAllAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
+  };
+
+  // Get notification icon based on type
+  const getNotificationIcon = (type: NotificationType["type"]) => {
+    switch (type) {
+      case "BORROW":
+        return "📚";
+      case "RETURN":
+        return "✅";
+      case "DUE_SOON":
+        return "⏰";
+      case "OVERDUE":
+        return "⚠️";
+      case "FINE":
+        return "💰";
+      default:
+        return "🔔";
+    }
+  };
+
+  // Format time ago
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return "Vừa xong";
+    if (diffInSeconds < 3600)
+      return `${Math.floor(diffInSeconds / 60)} phút trước`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
+    if (diffInSeconds < 604800)
+      return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
+    return date.toLocaleDateString("vi-VN");
+  };
+
+  // Initial fetch
+  useEffect(() => {
+    fetchUnreadCount();
+    // Refresh unread count every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [fetchUnreadCount]);
+
+  // Socket connection for realtime notifications
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken")?.replace(/"/g, "");
+    if (!token) return;
+
+    // Connect socket
+    socketService.connect(token);
+
+    // Listen for new notifications
+    socketService.onNewNotification((notification: unknown) => {
+      const newNotification = notification as NotificationType;
+      console.log("New notification received:", newNotification);
+
+      // Add to notifications list (at the beginning)
+      setNotifications((prev) => {
+        // Avoid duplicates
+        if (prev.some((n) => n._id === newNotification._id)) {
+          return prev;
+        }
+        return [newNotification, ...prev].slice(0, 10); // Keep only 10
+      });
+
+      // Increment unread count
+      setUnreadCount((prev) => prev + 1);
+
+      // Show browser notification if permitted
+      if (Notification.permission === "granted") {
+        new window.Notification(newNotification.title, {
+          body: newNotification.message,
+          icon: "/favicon.ico",
+        });
+      }
+    });
+
+    return () => {
+      socketService.offNewNotification();
+    };
+  }, []);
+
+  // Request notification permission
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      "Notification" in window &&
+      Notification.permission === "default"
+    ) {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Fetch notifications when dropdown opens
+  useEffect(() => {
+    if (notificationDropdownOpen) {
+      fetchNotifications();
+    }
+  }, [notificationDropdownOpen, fetchNotifications]);
 
   const submit = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -25,6 +186,12 @@ export default function Header({ onSearch }: Props) {
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setUserDropdownOpen(false);
+      }
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target as Node)
+      ) {
+        setNotificationDropdownOpen(false);
       }
     };
 
@@ -124,8 +291,146 @@ export default function Header({ onSearch }: Props) {
             </div>
           </form>
 
-          {/* User Account Dropdown */}
+          {/* Notification + User Account Dropdown */}
           <div className="flex items-center gap-3">
+            {/* Notification Bell */}
+            <div className="relative" ref={notificationRef}>
+              <button
+                onClick={() =>
+                  setNotificationDropdownOpen(!notificationDropdownOpen)
+                }
+                className="relative p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-all border border-white/20"
+              >
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                  />
+                </svg>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Dropdown */}
+              {notificationDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-gray-900 rounded-xl shadow-2xl overflow-hidden border border-gray-700 animate-in fade-in slide-in-from-top-2 duration-200 max-h-[70vh] flex flex-col">
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-slate-800 to-cyan-800 px-4 py-3 flex items-center justify-between">
+                    <h3 className="font-semibold text-white flex items-center gap-2">
+                      🔔 Thông báo
+                      {unreadCount > 0 && (
+                        <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                          {unreadCount} mới
+                        </span>
+                      )}
+                    </h3>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={handleMarkAllAsRead}
+                        className="text-xs text-cyan-300 hover:text-cyan-100 transition-colors"
+                      >
+                        Đọc tất cả
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Notification List */}
+                  <div className="overflow-y-auto flex-1">
+                    {isLoadingNotifications ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+                      </div>
+                    ) : notifications.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                        <svg
+                          className="w-12 h-12 mb-2 opacity-50"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                          />
+                        </svg>
+                        <p className="text-sm">Không có thông báo nào</p>
+                      </div>
+                    ) : (
+                      notifications.map((notification) => (
+                        <div
+                          key={notification._id}
+                          onClick={() => {
+                            if (!notification.isRead) {
+                              handleMarkAsRead(notification._id);
+                            }
+                            if (notification.link) {
+                              window.location.href = notification.link;
+                            }
+                            setNotificationDropdownOpen(false);
+                          }}
+                          className={`px-4 py-3 border-b border-gray-700/50 hover:bg-gray-800/50 transition-colors cursor-pointer ${
+                            !notification.isRead ? "bg-cyan-900/20" : ""
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className="text-2xl flex-shrink-0">
+                              {getNotificationIcon(notification.type)}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p
+                                  className={`font-medium text-sm truncate ${
+                                    !notification.isRead
+                                      ? "text-white"
+                                      : "text-gray-300"
+                                  }`}
+                                >
+                                  {notification.title}
+                                </p>
+                                {!notification.isRead && (
+                                  <span className="w-2 h-2 bg-cyan-400 rounded-full flex-shrink-0"></span>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">
+                                {notification.message}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {formatTimeAgo(notification.createdAt)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  {notifications.length > 0 && (
+                    <Link
+                      href="/notifications"
+                      className="block text-center py-3 text-sm text-cyan-400 hover:text-cyan-300 hover:bg-gray-800/50 transition-colors border-t border-gray-700"
+                      onClick={() => setNotificationDropdownOpen(false)}
+                    >
+                      Xem tất cả thông báo
+                    </Link>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* User Account Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
