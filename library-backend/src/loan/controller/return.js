@@ -1,4 +1,4 @@
-import { notifyReturn } from "../../notification/services/notification.service.js";
+import { notifyReturn, notifyAdminReturn } from "../../notification/services/notification.service.js";
 import mongoose from "mongoose";
 import Loan from "../model/loan.js";
 import Book from "../../book/models/Book.js";
@@ -8,6 +8,7 @@ import Fine from "../../fine/model/fine.js";
 import Wishlist from "../../whislist/model/whislist.model.js";
 import Notification from "../../notification/model/notification.js";
 import { generatePickupCode } from "../service/loan.service.js";
+import { checkAndNotifyViolation } from "../../notification/services/violationCheck.service.js";
 
 const excecute = async (req, res) => {
     try {
@@ -147,7 +148,16 @@ const excecute = async (req, res) => {
 
         // Gửi thông báo trả sách cho user trả
         try {
-            await notifyReturn(loan.userId._id, loan.bookId.title, loan._id, 0);
+            const daysLate = loan.status === "OVERDUE"
+                ? Math.ceil((loan.returnDate - loan.dueDate) / 86400000)
+                : 0;
+            await notifyReturn(loan.userId._id, loan.bookId.title, loan._id, daysLate);
+            await notifyAdminReturn(loan.userId.fullName || loan.userId.email, loan.bookId.title, loan._id, daysLate);
+
+            if (daysLate > 0) {
+                // Kiểm tra vi phạm và thông báo nếu cần
+                await checkAndNotifyViolation(loan.userId._id, loan.userId.fullName || loan.userId.email);
+            }
         } catch (notiErr) {
             console.error("Error sending notification:", notiErr);
         }

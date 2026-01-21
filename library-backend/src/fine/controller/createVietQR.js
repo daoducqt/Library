@@ -29,7 +29,6 @@ const excecute = async (req, res) => {
             });
         }
 
-        //  XÓA ĐOẠN CHECK PERMISSION:
         // if (fine.userId.toString() !== userId.toString()) {
         //     return res.status(StatusCodes.FORBIDDEN).send({
         //         status: StatusCodes.FORBIDDEN,

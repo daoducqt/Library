@@ -1,5 +1,7 @@
 import Fine from "../model/fine.js";
 import Notification from "../../notification/model/notification.js";
+import { notifyAdminFinePayment } from "../../notification/services/notification.service.js";
+import User from "../../user/models/User.js";
 
 const excecute = async (req, res) => {
     try {
@@ -110,6 +112,9 @@ const excecute = async (req, res) => {
                 type: "FINE",
                 isRead: false,
             });
+
+            const user = await User.findById(fine.userId._id).select("fullName email");
+            await notifyAdminFinePayment(user.fullName || user.email, fine.amount, fine._id, "BANK_TRANSFER");
 
             console.log('✅ Notification created');
         }
