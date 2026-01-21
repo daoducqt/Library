@@ -5,7 +5,7 @@ import Book from "../../book/models/Book.js";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
 import Fine from "../../fine/model/fine.js";
-import { notifyBorrow, notifyAdminNewBorrow } from "../../notification/services/notification.service.js";
+import { createNotification, notifyAdminNewBorrow } from "../../notification/services/notification.service.js";
 import { generatePickupCode } from "../service/loan.service.js";
 
 const MAX_ACTIVE_BORROWS = 10;
@@ -59,7 +59,7 @@ const excecute = async (req, res) => {
       });
     }
 
-    //  có sách quá hạn
+    // có sách quá hạn
     const hasOverdue = activeLoans.some(
       loan => loan.status === "OVERDUE"
     );
@@ -71,7 +71,7 @@ const excecute = async (req, res) => {
       });
     }
 
-    //  vượt giới hạn mượn
+    // vượt giới hạn mượn
     const borrowedCount = activeLoans.filter(
       loan => loan.status === "BORROWED"
     ).length;
@@ -83,7 +83,7 @@ const excecute = async (req, res) => {
       });
     }
 
-    /* ===== kiểm tra book ===== */
+    /* =====  kiểm tra book ===== */
     const book = await Book.findById(bookId);
     if (!book) {
       return res.status(StatusCodes.NOT_FOUND).send({
@@ -99,7 +99,7 @@ const excecute = async (req, res) => {
       });
     }
 
-    /* ===== tạo loan ===== */
+    /* =====  tạo loan ===== */
     const borrowDate = new Date();
     const dueDate = new Date(borrowDate.getTime() + days * 86400000);
 
@@ -115,14 +115,27 @@ const excecute = async (req, res) => {
       pickupExpiry,
     });
 
-    // /* ===== update số lượng sách ===== */
-    // await Book.findByIdAndUpdate(bookId, {
-    //   $inc: { availableCopies: -1 },
-    // });
-
     /* =====  gửi thông báo ===== */
     try {
-      await notifyBorrow(user._id, book.title, loan._id);
+      // Thông báo cho user
+      await createNotification(
+        user._id,
+        "Đặt sách thành công!",
+        `Mã lấy sách: ${pickCode}. Vui lòng đến quầy thư viện trong 24 giờ để nhận sách "${book.title}".`,
+        {
+          type: "BORROW",
+          loanId: loan._id,
+          bookId: book._id,
+          link: `/loans/${loan._id}`,
+          metadata: { 
+            pickCode, 
+            pickupExpiry,
+            bookTitle: book.title
+          }
+        }
+      );
+
+      // Thông báo cho admin
       await notifyAdminNewBorrow(user.fullName || user.email, book.title, loan._id);
     } catch (notiErr) {
       console.error("Error sending notification:", notiErr);
@@ -130,7 +143,7 @@ const excecute = async (req, res) => {
 
     return res.status(StatusCodes.OK).send({
       status: StatusCodes.OK,
-      message: "Mượn sách thành công",
+      message: "Đặt sách thành công",
       data: loan,
       pickCode,
       pickupExpiry,

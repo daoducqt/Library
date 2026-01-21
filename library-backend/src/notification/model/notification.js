@@ -22,13 +22,24 @@ const NotificationSchema = new mongoose.Schema(
         type: {
             type: String,
             enum: [
-                "BORROW", "RETURN", "DUE_SOON", "OVERDUE", "FINE",
-                "ADMIN_NEW_BORROW",
-                "ADMIN_RETURN",
-                "ADMIN_OVERDUE", 
-                "ADMIN_FINE_PAYMENT",
-                "ADMIN_USER_VIOLATION",
-                "OTHER"
+                //USER NOTIFICATIONS
+                "BORROW",              // User đặt sách (status = PENDING)
+                "BORROW_CONFIRM",      // User nhận sách tại quầy (status = BORROWED)
+                "RETURN",              // User trả sách
+                "DUE_SOON",            // Sắp quá hạn trả
+                "OVERDUE",             // Đã quá hạn
+                "FINE",                // Thông báo phạt
+                "WISHLIST_AVAILABLE",  // Sách trong wishlist có sẵn
+                
+                //ADMIN NOTIFICATIONS 
+                "ADMIN_NEW_BORROW",      // Admin: User đặt sách mới
+                "ADMIN_CONFIRM_BORROW",  // Admin: Đã xác nhận user nhận sách
+                "ADMIN_RETURN",          // Admin: User trả sách
+                "ADMIN_OVERDUE",         // Admin: Cảnh báo user quá hạn
+                "ADMIN_FINE_PAYMENT",    // Admin: User thanh toán phạt
+                "ADMIN_USER_VIOLATION",  // Admin: User vi phạm nhiều lần
+                
+                "OTHER"                  
             ],
             default: "OTHER"
         },
