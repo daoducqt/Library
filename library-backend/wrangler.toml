@@ -1,6 +1,0 @@
-name = "library-payment-mock"
-main = "src/index.js"
-compatibility_date = "2026-01-14"
-
-[env.production]
-vars = { ENVIRONMENT = "production" }
