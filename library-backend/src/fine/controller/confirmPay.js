@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import Fine from "../model/fine.js";
 import Notification from "../../notification/model/notification.js";
+import { notifyAdminFinePayment } from "../../notification/services/notification.service.js";
+import User from "../../user/models/User.js";
 
 const excecute = async (req, res) => {
     try {
@@ -45,6 +47,8 @@ const excecute = async (req, res) => {
             loanId: fine.loanId._id,
             bookId: fine.loanId.bookId,
         });
+        const user = await User.findById(fine.userId).select("fullName email");
+        await notifyAdminFinePayment(user.fullName || user.email, fine.amount, fine._id,"CASH");
         
         return res.status(StatusCodes.OK).send({
             status: StatusCodes.OK,

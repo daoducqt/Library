@@ -187,6 +187,123 @@ export const deleteNotificationById = async (notificationId) => {
     }
 };
 
+/**
+ * Lấy tất cả admin user IDs
+ */
+const getAllAdminIds = async () => {
+    const User = (await import("../../user/models/User.js")).default;
+    const { RoleTypeEnum } = await import("../../user/models/User.js");
+    
+    const admins = await User.find({ 
+        role: { $in: [RoleTypeEnum.ADMIN, RoleTypeEnum.SUPER_ADMIN] }
+    }).select('_id');
+    
+    return admins.map(admin => admin._id);
+};
+
+/**
+ * Gửi notification cho tất cả Admin
+ */
+const notifyAllAdmins = async (title, message, options = {}) => {
+    try {
+        const adminIds = await getAllAdminIds();
+        
+        const notifications = adminIds.map(adminId => ({
+            userId: adminId,
+            title,
+            message,
+            targetRole: "ADMIN",
+            ...options
+        }));
+        
+        const result = await Notification.insertMany(notifications);
+        return result;
+    } catch (err) {
+        console.error("Notify all admins error:", err);
+        throw new Error("Lỗi khi gửi thông báo cho admin");
+    }
+};
+
+/**
+ * Admin: Thông báo user mượn sách mới
+ */
+export const notifyAdminNewBorrow = async (userName, bookTitle, loanId) => {
+    return notifyAllAdmins(
+        "Mượn sách mới",
+        `${userName} vừa mượn sách "${bookTitle}"`,
+        {
+            type: "ADMIN_NEW_BORROW",
+            loanId,
+            link: `/admin/loans/${loanId}`,
+            metadata: { userName, bookTitle }
+        }
+    );
+};
+
+/**
+ * Admin: Thông báo user trả sách
+ */
+export const notifyAdminReturn = async (userName, bookTitle, loanId, daysLate = 0) => {
+    const title = daysLate > 0 ? "Trả sách quá hạn" : "Trả sách";
+    const message = daysLate > 0 
+        ? `${userName} đã trả sách "${bookTitle}" (trễ ${daysLate} ngày)`
+        : `${userName} đã trả sách "${bookTitle}"`;
+    
+    return notifyAllAdmins(title, message, {
+        type: "ADMIN_RETURN",
+        loanId,
+        link: `/admin/loans/${loanId}`,
+        metadata: { userName, bookTitle, daysLate }
+    });
+};
+
+/**
+ * Admin: Cảnh báo quá hạn
+ */
+export const notifyAdminOverdue = async (userName, bookTitle, loanId, daysOverdue) => {
+    return notifyAllAdmins(
+        "⚠️ Cảnh báo quá hạn",
+        `${userName} quá hạn ${daysOverdue} ngày - Sách: "${bookTitle}"`,
+        {
+            type: "ADMIN_OVERDUE",
+            loanId,
+            link: `/admin/loans/${loanId}`,
+            metadata: { userName, bookTitle, daysOverdue }
+        }
+    );
+};
+
+/**
+ * Admin: Thông báo thanh toán phạt
+ */
+export const notifyAdminFinePayment = async (userName, amount, fineId, paymentMethod) => {
+    return notifyAllAdmins(
+        "💰 Thanh toán phạt",
+        `${userName} đã thanh toán ${amount.toLocaleString('vi-VN')}đ qua ${paymentMethod}`,
+        {
+            type: "ADMIN_FINE_PAYMENT",
+            fineId,
+            link: `/admin/fines/${fineId}`,
+            metadata: { userName, amount, paymentMethod }
+        }
+    );
+};
+
+/**
+ * Admin: Cảnh báo user vi phạm nhiều
+ */
+export const notifyAdminUserViolation = async (userName, userId, violationCount, violationType) => {
+    return notifyAllAdmins(
+        "⚠️ Người dùng vi phạm",
+        `${userName} đã có ${violationCount} lần ${violationType}`,
+        {
+            type: "ADMIN_USER_VIOLATION",
+            link: `/admin/users/${userId}`,
+            metadata: { userName, userId, violationCount, violationType }
+        }
+    );
+};
+
 export default {
     createNotification,
     notifyBorrow,
@@ -197,4 +314,10 @@ export default {
     markAsRead,
     markAllAsRead,
     deleteNotificationById,
+    // Admin notifications
+    notifyAdminNewBorrow,
+    notifyAdminReturn,
+    notifyAdminOverdue,
+    notifyAdminFinePayment,
+    notifyAdminUserViolation
 };

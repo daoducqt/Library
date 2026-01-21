@@ -21,7 +21,15 @@ const NotificationSchema = new mongoose.Schema(
         },
         type: {
             type: String,
-            enum: ["BORROW", "RETURN", "DUE_SOON", "OVERDUE", "FINE", "OTHER"],
+            enum: [
+                "BORROW", "RETURN", "DUE_SOON", "OVERDUE", "FINE",
+                "ADMIN_NEW_BORROW",
+                "ADMIN_RETURN",
+                "ADMIN_OVERDUE", 
+                "ADMIN_FINE_PAYMENT",
+                "ADMIN_USER_VIOLATION",
+                "OTHER"
+            ],
             default: "OTHER"
         },
         loanId: { 
@@ -34,10 +42,24 @@ const NotificationSchema = new mongoose.Schema(
             ref: "Book",
             default: null 
         },
+        fineId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Fine",
+            default: null
+        },
         isRead: { 
             type: Boolean, 
             default: false 
         },
+        targetRole: {
+            type: String,
+            enum: ["USER", "ADMIN", "SUPER_ADMIN"],
+            default: "USER"
+        },
+        metadata: {
+            type: mongoose.Schema.Types.Mixed,
+            default: null
+        }
     },
     { timestamps: true }
 );
