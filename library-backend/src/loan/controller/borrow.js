@@ -5,7 +5,7 @@ import Book from "../../book/models/Book.js";
 import StatusCodes from "../../../core/utils/statusCode/statusCode.js";
 import ReasonPhrases from "../../../core/utils/statusCode/reasonPhares.js";
 import Fine from "../../fine/model/fine.js";
-import { notifyBorrow } from "../../notification/services/notification.service.js";
+import { notifyBorrow, notifyAdminNewBorrow } from "../../notification/services/notification.service.js";
 import { generatePickupCode } from "../service/loan.service.js";
 
 const MAX_ACTIVE_BORROWS = 10;
@@ -34,7 +34,7 @@ const excecute = async (req, res) => {
       });
     }
 
-    /* ===== 1️⃣ validate bookId ===== */
+    /* =====  validate bookId ===== */
     if (!mongoose.Types.ObjectId.isValid(bookId)) {
       return res.status(StatusCodes.BAD_REQUEST).send({
         status: StatusCodes.BAD_REQUEST,
@@ -42,7 +42,7 @@ const excecute = async (req, res) => {
       });
     }
 
-    /* ===== 2️⃣ kiểm tra loan đang tồn tại ===== */
+    /* =====  kiểm tra loan đang tồn tại ===== */
     const activeLoans = await Loan.find({
       userId: user._id,
       status: { $in: ["PENDING", "BORROWED", "OVERDUE"] },
@@ -59,7 +59,7 @@ const excecute = async (req, res) => {
       });
     }
 
-    // ❌ có sách quá hạn
+    //  có sách quá hạn
     const hasOverdue = activeLoans.some(
       loan => loan.status === "OVERDUE"
     );
@@ -71,7 +71,7 @@ const excecute = async (req, res) => {
       });
     }
 
-    // ❌ vượt giới hạn mượn
+    //  vượt giới hạn mượn
     const borrowedCount = activeLoans.filter(
       loan => loan.status === "BORROWED"
     ).length;
@@ -83,7 +83,7 @@ const excecute = async (req, res) => {
       });
     }
 
-    /* ===== 3️⃣ kiểm tra book ===== */
+    /* ===== kiểm tra book ===== */
     const book = await Book.findById(bookId);
     if (!book) {
       return res.status(StatusCodes.NOT_FOUND).send({
@@ -99,7 +99,7 @@ const excecute = async (req, res) => {
       });
     }
 
-    /* ===== 4️⃣ tạo loan ===== */
+    /* ===== tạo loan ===== */
     const borrowDate = new Date();
     const dueDate = new Date(borrowDate.getTime() + days * 86400000);
 
@@ -115,14 +115,15 @@ const excecute = async (req, res) => {
       pickupExpiry,
     });
 
-    // /* ===== 5️⃣ update số lượng sách ===== */
+    // /* ===== update số lượng sách ===== */
     // await Book.findByIdAndUpdate(bookId, {
     //   $inc: { availableCopies: -1 },
     // });
 
-    /* ===== 6️⃣ gửi thông báo ===== */
+    /* =====  gửi thông báo ===== */
     try {
       await notifyBorrow(user._id, book.title, loan._id);
+      await notifyAdminNewBorrow(user.fullName || user.email, book.title, loan._id);
     } catch (notiErr) {
       console.error("Error sending notification:", notiErr);
     }
