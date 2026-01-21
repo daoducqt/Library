@@ -8,6 +8,27 @@ import User from "../user/models/User.js";
 const userSockets = new Map();
 const adminSockets = new Map();
 
+// Export io instance để sử dụng trong notification service
+let ioInstance = null;
+
+export const getIO = () => ioInstance;
+
+// Helper function để emit notification realtime
+export const emitNotification = (userId, notification) => {
+  if (ioInstance) {
+    ioInstance.to(userId.toString()).emit("new_notification", notification);
+    console.log(`Emitted notification to user ${userId}`);
+  }
+};
+
+// Helper function để emit notification cho tất cả admins
+export const emitNotificationToAdmins = (notification) => {
+  if (ioInstance) {
+    ioInstance.to("admins").emit("new_notification", notification);
+    console.log("Emitted notification to all admins");
+  }
+};
+
 export const initializeSocket = (server) => {
   const io = new Server(server, {
     cors: {
@@ -263,6 +284,9 @@ export const initializeSocket = (server) => {
       }
     });
   });
+
+  // Store io instance
+  ioInstance = io;
 
   return io;
 };

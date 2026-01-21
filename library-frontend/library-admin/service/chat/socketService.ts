@@ -174,6 +174,12 @@ class SocketService {
     socket?.on("admin_joined", callback);
   }
 
+  // Notification events
+  onNewNotification(callback: (notification: unknown) => void): void {
+    const socket = this.getSocketFromWindow();
+    socket?.on("new_notification", callback);
+  }
+
   // Remove listeners
   offNewMessage(): void {
     const socket = this.getSocketFromWindow();
@@ -205,6 +211,11 @@ class SocketService {
     socket?.off("conversation_assigned");
   }
 
+  offNewNotification(): void {
+    const socket = this.getSocketFromWindow();
+    socket?.off("new_notification");
+  }
+
   offAll(): void {
     this.offNewMessage();
     this.offNewMessageNotification();
@@ -212,6 +223,7 @@ class SocketService {
     this.offUserTyping();
     this.offUserStopTyping();
     this.offConversationAssigned();
+    this.offNewNotification();
   }
 }
 
