@@ -14,7 +14,7 @@ const router = express.Router();
 
 // Public routes
 router.route("/").get(authenticationMiddleware.verifyToken, getNotifications.excecute);
-router.route("/page").post(authenticationMiddleware.verifyToken, validateRequest(pageNotification.validate), pageNotification.excecute);
+router.route("/page").get(authenticationMiddleware.verifyToken, pageNotification.excecute);
 router.route("/unread").get(authenticationMiddleware.verifyToken, unread.excecute);
 router.route("/is-read/:id").post(authenticationMiddleware.verifyToken, isRead.excecute);
 router.route("/is-read-all").post(authenticationMiddleware.verifyToken, isReadAll.excecute);

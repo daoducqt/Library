@@ -5,16 +5,16 @@ import mongoose from "mongoose";
 
 const excecute = async (req, res) => {
     try {
-        const { notificationId } = req.params;
+        const { id } = req.params;
 
-        if (!mongoose.Types.ObjectId.isValid(notificationId)){
+        if (!mongoose.Types.ObjectId.isValid(id)){
             return res.status(StatusCodes.BAD_REQUEST).send({
                 status: StatusCodes.BAD_REQUEST,
                 message: "ID thông báo không hợp lệ",
             })
         }
 
-        const deleted = await Notification.findByIdAndDelete(notificationId);
+        const deleted = await Notification.findByIdAndDelete(id);
 
         if (!deleted) {
             return res.status(StatusCodes.NOT_FOUND).send({
