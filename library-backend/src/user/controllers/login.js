@@ -101,8 +101,8 @@ const excecute = async (req, res) => {
       message: ReasonPhrases.OK || "Đăng nhập thành công",
       data: {
         user: userData,
-        accessToken, // Trả về token để frontend lưu vào localStorage
-        refreshToken,
+        // accessToken, // Trả về token để frontend lưu vào localStorage
+        // refreshToken,
       },
     });
   } catch (error) {

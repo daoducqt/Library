@@ -18,7 +18,7 @@ const excecute = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    // ─── TÌM REGISTRATION TEMP ───────────────────────────────
+    // ─── TÌM REGISTRATION TEMP 
     const registration = await Registration.findOne({ 
       email,
       otpCode: otp,
@@ -32,7 +32,7 @@ const excecute = async (req, res) => {
       });
     }
 
-    // ─── CHECK DUPLICATE LẦN CUỐI (đề phòng race condition) ───────────────
+    // ─── CHECK DUPLICATE LẦN CUỐI (đề phòng race condition) 
     const existingUser = await User.findOne({
       $or: [
         { userName: registration.userName },

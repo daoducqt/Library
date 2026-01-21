@@ -14,7 +14,7 @@ import { emitNotification, emitNotificationToAdmins } from "../../socket/socket.
  *  @param { string } [ options.bookIds ] - Danh sách ID sách liên quan (nếu có)
  */
 
-const createNotification = async (userId, title, message, options = {}) => {
+export const createNotification = async (userId, title, message, options = {}) => {
     try {
         const newNotification = new Notification({
             userId,
